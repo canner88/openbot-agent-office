@@ -81,7 +81,7 @@ def build_character(name, is_female, hair_file, cloth_col, hair_col, skin_col):
             body_objs.append(obj)
 
     if arm:
-        rename_armature_bones(arm)
+        pass  # rename bones after attaching modular outfits so vertex groups match!
 
     cloth_mat = make_mat("Cloth", cloth_col, 0.8)
     skin_mat = make_mat("Skin", skin_col, 0.65)
@@ -137,6 +137,9 @@ def build_character(name, is_female, hair_file, cloth_col, hair_col, skin_col):
                     o.data.materials.append(cloth_mat)
             elif o.type == 'ARMATURE':
                 bpy.data.objects.remove(o, do_unlink=True)
+
+    if arm:
+        rename_armature_bones(arm)
 
     # Import hairstyle and parent to head bone
     hair_path = os.path.join(HAIR_DIR, hair_file)
