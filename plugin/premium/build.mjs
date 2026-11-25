@@ -82,6 +82,8 @@ function findBlender() {
   if (process.platform === 'win32') {
     const root = 'C:\\Program Files\\Blender Foundation';
     if (fs.existsSync(root)) for (const d of fs.readdirSync(root).sort().reverse()) tries.push(path.join(root, d, 'blender.exe'));
+    const launcher = path.join(process.env.LOCALAPPDATA || '', 'Microsoft', 'WindowsApps', 'blender-launcher.exe');
+    if (launcher) tries.push(launcher);
   }
   for (const t of tries) if (t && fs.existsSync(t)) return t;
   const which = spawnSync(process.platform === 'win32' ? 'where' : 'which', ['blender'], { encoding: 'utf8' });

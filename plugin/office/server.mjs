@@ -50,18 +50,20 @@ const CORS = {
   'access-control-allow-headers': 'content-type',
 };
 
-function sendFile(res, file) {
+function sendFile(res, file, headOnly = false) {
   res.writeHead(200, { 'content-type': MIME[path.extname(file)] || 'application/octet-stream' });
+  if (headOnly) { res.end(); return; }
   fs.createReadStream(file).pipe(res);
 }
 
 function serveStatic(req, res) {
+  const headOnly = req.method === 'HEAD';
   const url = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   // the user's own converted models (premium); a missing file is a plain 404
   if (url.startsWith('/models/')) {
     const file = path.normalize(path.join(MODELS_DIR, url.slice('/models/'.length)));
     if (!file.startsWith(MODELS_DIR) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404).end(); return; }
-    sendFile(res, file);
+    sendFile(res, file, headOnly);
     return;
   }
   if (url === '/premium' || url.startsWith('/premium/')) {
@@ -73,7 +75,7 @@ function serveStatic(req, res) {
     let file = path.normalize(path.join(PREMIUM_UI_DIR, url.slice('/premium'.length) || '/'));
     if (!file.startsWith(PREMIUM_UI_DIR)) { res.writeHead(403).end(); return; }
     if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) file = path.join(PREMIUM_UI_DIR, 'index.html');
-    sendFile(res, file);
+    sendFile(res, file, headOnly);
     return;
   }
   let file = path.normalize(path.join(UI_DIR, url === '/' ? 'index.html' : url));
@@ -84,8 +86,7 @@ function serveStatic(req, res) {
       .end('UI is not built. Run: cd app && npm install && npm run build');
     return;
   }
-  res.writeHead(200, { 'content-type': MIME[path.extname(file)] || 'application/octet-stream' });
-  fs.createReadStream(file).pipe(res);
+  sendFile(res, file, headOnly);
 }
 
 async function sendOpenBot(body, res) {
@@ -158,7 +159,7 @@ function handler(req, res) {
     return;
   }
 
-  if (req.method === 'GET') { serveStatic(req, res); return; }
+  if (req.method === 'GET' || req.method === 'HEAD') { serveStatic(req, res); return; }
   res.writeHead(404, CORS).end();
 }
 
