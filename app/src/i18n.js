@@ -1,8 +1,8 @@
-// Interface language. English is the default; Uzbek is one click away (EN | UZ in the panel).
+// Interface language. Turkish is the default. English and Uzbek stay one click away.
 // The source strings are English, so tr('Session started') needs no entry for English.
-// Choice order: ?lang= in the URL, then the saved choice, then English.
+// Choice order: ?lang= in the URL, then the saved choice, then Turkish.
 const LS = 'agent-office-lang';
-export const LANGS = ['en', 'uz'];
+export const LANGS = ['tr', 'en', 'uz'];
 
 export const lang = (() => {
   try {
@@ -11,7 +11,7 @@ export const lang = (() => {
     const saved = localStorage.getItem(LS);
     if (LANGS.includes(saved)) return saved;
   } catch { /* private window */ }
-  return 'en';
+  return 'tr';
 })();
 
 export function setLang(l) {
@@ -21,7 +21,7 @@ export function setLang(l) {
   location.replace(u.toString());
 }
 
-export const LOCALE = lang === 'uz' ? 'uz-UZ' : 'en-US';
+export const LOCALE = lang === 'tr' ? 'tr-TR' : lang === 'uz' ? 'uz-UZ' : 'en-US';
 
 const UZ = {
   // connection
@@ -93,8 +93,69 @@ const UZ = {
   'Add a login page and an API': 'Login sahifasi va API qo‘sh', 'Write the login API': 'Login API yozish', 'Login form': 'Login formasi',
 };
 
+const TR = {
+  'Not connected': 'Bağlı değil',
+  'Connecting…': 'Bağlanıyor…',
+  'Server connected': 'Sunucu bağlı',
+  'Replaying a recording': 'Kayıt oynatılıyor',
+  'Server not found — run /agent-office:office or /agent-office:doctor in Claude': 'Sunucu yok — Claude’da /agent-office:office veya /agent-office:doctor',
+  idle: 'boş', walking: 'yürüyor', working: 'çalışıyor', talking: 'konuşuyor', thinking: 'düşünüyor',
+  error: 'hata', 'ERROR!': 'HATA!', offline: 'çevrimdışı',
+  running: 'çalışıyor', crashed: 'çöktü', unhealthy: 'sağlıksız', restarting: 'yeniden başlıyor', stopped: 'durdu', removed: 'kalktı',
+  Info: 'Bilgi', Minor: 'Küçük', Moderate: 'Orta', Major: 'Büyük', Critical: 'Kritik',
+  minor: 'küçük', moderate: 'orta', major: 'büyük', critical: 'kritik',
+  Auto: 'Otomatik', Day: 'Gündüz', Night: 'Gece', 'Sun height': 'Güneş yüksekliği', Location: 'Konum',
+  'Finding your location…': 'Konum aranıyor…', Now: 'Şimdi', '{n} h': '{n} sa', 'Back to now': 'Şimdiye dön',
+  approximate: 'yaklaşık', saved: 'kayıtlı', Tashkent: 'Taşkent',
+  'Leave boss mode': 'Müdür modundan çık', 'Boss mode': 'Müdür modu', 'Your name': 'Adın', 'Boss name': 'Müdür adı',
+  '+ teammate (flutter)': '+ çalışan (flutter)', Boss: 'Müdür', you: 'sen', walk: 'yürü', run: 'koş', camera: 'kamera',
+  monitor: 'ekran', Exit: 'Çıkış', 'Open the {label} monitor': '{label} ekranını aç', 'state:': 'durum:', 'task:': 'görev:',
+  'errors:': 'hatalar:', '$ no logs yet_': '$ henüz kayıt yok_', '$ no services watched_': '$ izlenen servis yok_',
+  'Meeting screen': 'Toplantı ekranı', '{who}, help! {text}': '{who}, yardım! {text}', 'Hi {who}! On it: {task}': 'Selam {who}! Üzerindeyim: {task}',
+  work: 'iş', 'Hi {who}! 👋': 'Selam {who}! 👋', 'Cinema camera': 'Sinema kamerası',
+  'Agent Office': 'Ajan Ofisi', '{n} working · {m} total': '{n} çalışıyor · {m} kişi', 'No problems': 'Sorun yok',
+  Unmute: 'Sesi aç', Mute: 'Sesi kapat', 'real hook events': 'gerçek olaylar', Simulation: 'Simülasyon', Live: 'Canlı',
+  'Test events': 'Deneme olayları', 'Error count (click to clear)': 'Hata sayısı (temizlemek için tıkla)',
+  '{name} — recent activity': '{name} — son hareket', Events: 'Olaylar', 'Nothing yet': 'Henüz yok',
+  'No {level} or higher events': '{level} ve üstü olay yok', Services: 'Servisler',
+  '{service} {reason} — in the lounge': '{service} {reason} — dinlenmede', Language: 'Dil',
+  'Last reply': 'Son yanıt',
+  Errors: 'Hatalar', 'Color key': 'Renk anahtarı', 'panic at: {x}': 'panik eşiği: {x}', 'Panic threshold': 'Panik eşiği',
+  'red light, siren, lounge': 'kırmızı ışık, siren, dinlenme', 'Color mode': 'Renk modu', Sound: 'Ses',
+  'alarm from this level': 'bu seviyeden alarm', 'Event feed': 'Olay akışı', 'hide below': 'altını gizle',
+  Off: 'Kapalı', 'By status': 'Duruma göre', 'Red only': 'Yalnız kırmızı', All: 'Hepsi', 'Minor+': 'Küçük+', 'Moderate+': 'Orta+', 'Major+': 'Büyük+',
+  'Defaults: .agent-office.json': 'Varsayılan: .agent-office.json', 'Saved in this browser': 'Bu tarayıcıda saklanır',
+  'Reset to defaults': 'Varsayılana dön',
+  'plain log, 2xx/3xx/404': 'düz kayıt, 2xx/3xx/404', 'warning, retry, timeout, 4xx': 'uyarı, yeniden dene, zaman aşımı, 4xx',
+  'ERROR line, failed tool, 5xx': 'ERROR satırı, düşen araç, 5xx', 'FATAL, PANIC, OOM, DB auth, container crashed': 'FATAL, PANIC, OOM, veritabanı, konteyner çöktü',
+  Lounge: 'Dinlenme', 'Meeting room': 'Toplantı odası', 'Green zone': 'Yeşil alan', ENTRANCE: 'GİRİŞ',
+  Mobile: 'Mobil', Design: 'Tasarım', Docs: 'Belgeler', Security: 'Güvenlik', Team: 'Takım', 'Main Claude': 'Ana oturum',
+  'Starting work': 'İşe başlıyor', "Hi! I'm {name} 👋": 'Selam! Ben {name} 👋', 'Joined the team: {name}': 'Takıma katıldı: {name}',
+  'is unhealthy': 'sağlıksız', 'keeps crashing': 'sürekli çöküyor', 'went down': 'durdu', '✅ {name} is back': '✅ {name} döndü',
+  service: 'servis', action: 'işlem', 'Took a task: {task}': 'Görev aldı: {task}', '✓ Task done': '✓ Görev bitti', 'Done!': 'Bitti!',
+  'Session started': 'Oturum başladı', 'Session closed 👋': 'Oturum kapandı 👋', 'Session closed': 'Oturum kapandı',
+  'New request': 'Yeni istek', 'Request: {p}': 'İstek: {p}', Task: 'Görev', '→ handed to {agent}: {task}': '→ {agent} kişisine: {task}',
+  '{tool} failed: {err}': '{tool} hata verdi: {err}', 'Sub-agent ended with an error': 'Alt ajan hata ile bitti',
+  'Sub-agent stopped': 'Alt ajan durdu', 'Answer ready ✓': 'Yanıt hazır ✓', 'Answer ready': 'Yanıt hazır',
+  'Answer failed: {err}': 'Yanıt hata verdi: {err}', 'API error': 'API hatası',
+  'Users migration': 'Kullanıcı aktarımı', 'JWT check': 'JWT kontrolü', 'Orders endpoint': 'Sipariş ucu', 'Cache layer': 'Önbellek',
+  'Login page': 'Giriş sayfası', 'Dashboard table': 'Pano tablosu', 'Form validation': 'Form doğrulama', 'Mobile menu': 'Mobil menü',
+  'Nginx config': 'Nginx ayarı', 'Backup script': 'Yedek betiği', 'Login screen': 'Giriş ekranı', 'Push notifications': 'Anlık bildirim',
+  'Offline cache': 'Çevrimdışı önbellek', 'E2E tests': 'Uçtan uca test', Regression: 'Regresyon', 'Login test': 'Giriş testi', 'Load test': 'Yük testi',
+  'Model training': 'Model eğitimi', 'Data cleaning': 'Veri temizliği', Refactoring: 'Yeniden düzenleme', 'Code review': 'Kod incelemesi',
+  'Writing docs': 'Belge yazılıyor', 'Working on {task}': '{task} üzerinde', 'Task: {task}': 'Görev: {task}', '✓ {task} done': '✓ {task} bitti',
+  'Coffee break': 'Kahve molası', Meeting: 'Toplantı', 'When do we ship?': 'Ne zaman çıkarız?', 'Did we agree on the API schema?': 'API şemasında anlaştık mı?',
+  'Tests passed': 'Testler geçti', Planning: 'Plan', 'Splitting up the work': 'İşi bölüyor', 'Talking to {name}': '{name} ile konuşuyor',
+  '{name}, how is it going?': '{name}, nasıl gidiyor?', '{task} — almost done': '{task} — az kaldı', 'Starting now': 'Şimdi başlıyorum',
+  'Sync with {name}': '{name} ile eşitle',
+  'Open the premium office': 'Premium ofisi aç', 'Premium 3D office: run /agent-office:premium': 'Premium 3D ofis: /agent-office:premium',
+  'Add a login page and an API': 'Giriş sayfası ve API ekle', 'Write the login API': 'Giriş API’sini yaz', 'Login form': 'Giriş formu',
+};
+
+const DICT = lang === 'tr' ? TR : lang === 'uz' ? UZ : null;
+
 export function tr(text, vars) {
-  let s = lang === 'uz' ? (UZ[text] ?? text) : text;
+  let s = DICT ? (DICT[text] ?? text) : text;
   if (vars) s = s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? ''));
   return s;
 }

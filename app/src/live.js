@@ -54,8 +54,12 @@ const seatOf = (n) => {
   return id;
 };
 
+const lastReply = new Map();
+let primed = false;
+
 function applyPresence(list) {
   if (!Array.isArray(list)) return;
+  const announce = primed;
   for (const p of list) {
     const id = seatOf(p.id);
     if (!id) continue;
@@ -64,15 +68,33 @@ function applyPresence(list) {
     if (!a) continue;
     if (p.name && (id !== 'manager' || p.id === 'director')) S().patch(id, { name: p.name });
     const working = p.status === 'work' || p.status === 'wait';
-    const task = p.task || '';
-    if (working) {
+    const failed = p.status === 'error';
+    const reply = failed ? '' : String(p.reply || '');
+    const error = failed ? (p.error || 'Son tur hata ile bitti.') : '';
+    const stay = working || failed || !!reply;
+    if (stay) {
       const d = S().layout.desks[a.deskId];
       if (d && positions[id]) { positions[id].x = d.seat[0]; positions[id].z = d.seat[1]; positions[id].rot = Math.PI; }
-      S().patch(id, { state: 'working', task: task || a.task, path: [], after: null });
-    } else if (a.state === 'working') {
-      S().patch(id, { state: 'idle', task: '', path: [], after: null });
     }
+    const prevReply = lastReply.get(id) || '';
+    if (stay) {
+      S().patch(id, {
+        state: failed ? 'error' : working ? 'working' : 'idle',
+        task: working ? (p.task || a.task) : '',
+        reply, error, live: p.status || 'rest', path: [], after: null,
+      });
+    } else if (a.state === 'working' || a.state === 'error') {
+      S().patch(id, { state: 'idle', task: '', reply: '', error: '', live: p.status || 'rest', path: [], after: null });
+    } else {
+      S().patch(id, { live: p.status || 'rest' });
+    }
+    if (announce && reply && reply !== prevReply) {
+      S().say(id, short(reply, 90), 7000, 'ok');
+      S().log(id, short(reply, 120));
+    }
+    lastReply.set(id, reply);
   }
+  if (list.length) primed = true;
 }
 
 let running = []; // ishga tushgan sub-agentlar (agent_type kelmasa zaxira)
@@ -178,8 +200,11 @@ export function handleEvent(e) {
       s.ensureAgent(who);
       const what = describe(tool, input);
       const a = S().agents[who];
-      if (a.state === 'idle' && !a.down) S().goToDesk(who, { state: 'working' });
-      else S().setState(who, 'working');
+      const parked = a?.live === 'rest' || a?.live === 'error';
+      if (!parked) {
+        if (a.state === 'idle' && !a.down) S().goToDesk(who, { state: 'working' });
+        else S().setState(who, 'working');
+      }
       if (!S().isPanicking(who)) S().say(who, what, 2500);
       S().log(who, what);
       break;

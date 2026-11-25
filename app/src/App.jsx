@@ -11,7 +11,7 @@ import { startLive, stopLive, handleEvent, resolveServer } from './live.js';
 import { startSun } from './sun.js';
 import { BossController, BossHud } from './Boss.jsx';
 import { replayUrl, startReplay, stopReplay } from './replay.js';
-import { SkyBackdrop, StudioLight, Effects, CinemaCamera } from './Look.jsx';
+import { SkyBackdrop, StudioLight, Effects, CinemaCamera, FocusCam, cancelFocus } from './Look.jsx';
 
 const CONN = {
   off: [tr('Not connected'), '#8f9bb3'],
@@ -237,7 +237,7 @@ function PremiumLink() {
 }
 
 function Panel() {
-  const { mode, conn, agents, selected, feed, setMode, select, muted, toggleMute, clearErrors, replayInfo } = useOffice();
+  const { mode, conn, agents, selected, feed, setMode, lookAt, muted, toggleMute, clearErrors, replayInfo } = useOffice();
   const isReplay = !!replayInfo;
   const list = Object.values(agents);
   const sel = selected && agents[selected];
@@ -269,7 +269,7 @@ function Panel() {
         {!isReplay && (
         <div className="seg" role="tablist">
           <button className={mode === 'sim' ? 'on' : ''} onClick={() => setMode('sim')}>{tr('Simulation')}</button>
-          <button className={mode === 'live' ? 'on' : ''} onClick={() => setMode('live')}>Live</button>
+          <button className={mode === 'live' ? 'on' : ''} onClick={() => setMode('live')}>{tr('Live')}</button>
         </div>
         )}
         {mode === 'live' && !isReplay && (
@@ -289,9 +289,11 @@ function Panel() {
         <div className="agents">
           {list.map((a) => {
             const isBad = a.state === 'panic' || a.down;
+            const isErr = a.state === 'error';
+            const line = a.down ? `💥 ${a.down.service} ${a.down.reason}` : a.state === 'panic' ? `🔥 ${a.alarm?.text}` : isErr ? (a.error || '—') : (a.state !== 'working' && a.reply) ? a.reply : (a.task || '—');
             const vis = visibleSev(isBad ? maxSev(maxSev(a.sev ?? 'info', a.down?.severity ?? 'info'), a.alarm?.severity ?? 'major') : a.sev, settings);
             return (
-              <button key={a.id} className={`agent-row ${selected === a.id ? 'sel' : ''} ${isBad ? 'bad' : ''} ${vis ? `sev-${vis}` : ''}`} onClick={() => select(a.id)}>
+              <button key={a.id} className={`agent-row ${selected === a.id ? 'sel' : ''} ${isBad ? 'bad' : ''} ${isErr ? 'err' : ''} ${vis ? `sev-${vis}` : ''}`} onClick={() => lookAt(a.id)}>
                 <span className="dot" style={{ background: a.color }} />
                 <span className="nm">
                   {a.name}
@@ -300,9 +302,7 @@ function Panel() {
                   )}
                 </span>
                 <span className={`st st-${a.down ? 'down' : a.state} ${vis ? `sev-${vis}` : ''}`}>{a.down ? STATE_LABEL('down') : a.state === 'panic' ? (SEV[vis ?? 'major'].label + '!') : vis ? SEV[vis].label.toLowerCase() : STATE_LABEL(a.state)}</span>
-                <span className="task">
-                  {a.down ? `💥 ${a.down.service} ${a.down.reason}` : a.state === 'panic' ? `🔥 ${a.alarm?.text}` : a.task || '—'}
-                </span>
+                <span className="task">{line}</span>
               </button>
             );
           })}
@@ -342,7 +342,7 @@ function Panel() {
 // Sahna ustidagi qizil ogohlantirish
 function AlertBanner() {
   const agents = useOffice((s) => s.agents);
-  const select = useOffice((s) => s.select);
+  const lookAt = useOffice((s) => s.lookAt);
   const settings = useOffice((s) => s.settings);
   const issues = Object.values(agents)
     .filter((a) => a.state === 'panic' || a.down)
@@ -352,7 +352,7 @@ function AlertBanner() {
   return (
     <div className="alerts">
       {issues.map(({ a, sev }) => (
-        <button key={a.id} className={`alert ${a.down ? 'down' : 'panic'} sev-${visibleSev(sev, settings) ?? 'major'}`} onClick={() => select(a.id)}>
+        <button key={a.id} className={`alert ${a.down ? 'down' : 'panic'} sev-${visibleSev(sev, settings) ?? 'major'}`} onClick={() => lookAt(a.id)}>
           <span className="alert-dot" />
           <b>{a.name}</b>
           <em className="alert-sev">{SEV[sev]?.label}</em>
@@ -440,9 +440,10 @@ export default function App() {
           <Lights />
           <Office />
           {ids.split(',').map((id) => <Agent key={id} id={id} />)}
-          <OrbitControls makeDefault target={[0, 0, 0.5]} maxPolarAngle={1.2} minDistance={8} maxDistance={45} enableDamping dampingFactor={0.08} />
+          <OrbitControls makeDefault target={[0, 0, 0.5]} maxPolarAngle={1.2} minDistance={8} maxDistance={45} enableDamping dampingFactor={0.08} onStart={cancelFocus} />
           <BossController />
           <CinemaCamera />
+          <FocusCam />
           <Effects />
         </Canvas>
         <AlertBanner />

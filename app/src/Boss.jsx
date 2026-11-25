@@ -249,7 +249,8 @@ export function BossHud() {
             {agent && (
               <div className="term-status">
                 <span>{tr('state:')} <b>{STATE_LABEL(agent.down ? 'down' : agent.state)}</b></span>
-                <span>{tr('task:')} <b>{agent.task || '—'}</b></span>
+                <span>{tr('task:')} <b>{agent.state === 'error' ? (agent.error || '—') : (agent.task || '—')}</b></span>
+                <span>{tr('Last reply')} <b>{agent.reply || '—'}</b></span>
                 <span>{tr('errors:')} <b className={agent.errors ? 'err' : ''}>{agent.errors}</b></span>
                 {agent.down && <span className="err">💥 {agent.down.service} {agent.down.reason}</span>}
                 <DeskAsk agent={agent} />

@@ -24,9 +24,9 @@ function Shell({ title, children, wide }: { title: string; children: ReactNode; 
 
 function Kanban({ tasks }: { tasks: Task[] }) {
   const cols: [string, Task[]][] = [
-    ['Queued', tasks.filter((t) => t.status === 'queued')],
-    ['Running', tasks.filter((t) => t.status === 'running' || t.status === 'paused')],
-    ['Completed', tasks.filter((t) => t.status === 'completed')],
+    ['Kuyrukta', tasks.filter((t) => t.status === 'queued')],
+    ['Sürüyor', tasks.filter((t) => t.status === 'running' || t.status === 'paused')],
+    ['Bitti', tasks.filter((t) => t.status === 'completed')],
   ];
   return (
     <div className="grid grid-cols-3 gap-3">
@@ -52,13 +52,13 @@ export function WhiteboardModal() {
   const tasks = useOffice((s) => s.tasks);
   const list = project ? project.taskIds.map((i) => tasks[i]).filter(Boolean) : Object.values(tasks);
   return (
-    <Shell title="Project whiteboard" wide>
+    <Shell title="Proje tahtası" wide>
       {project ? (
         <div className="mb-4">
           <div className="mb-1 flex justify-between text-[13px]"><span className="font-semibold">{project.title}</span><span className="font-mono">{Math.round(project.progress)}%</span></div>
           <Progress value={project.progress} h={10} color={project.status === 'completed' ? '#22c55e' : '#7c9cff'} />
         </div>
-      ) : <p className="mb-3 text-[13px] text-muted">No project yet.</p>}
+      ) : <p className="mb-3 text-[13px] text-muted">Henüz proje yok.</p>}
       <Kanban tasks={list} />
     </Shell>
   );
@@ -68,9 +68,9 @@ export function MeetingModal() {
   const agents = useOffice((s) => s.agents);
   const here = AGENT_IDS.filter((id) => agents[id].place === 'meeting');
   return (
-    <Shell title="Meeting room">
+    <Shell title="Toplantı odası">
       <div className="mb-3 flex items-center gap-2">
-        {here.length ? here.map((id) => <AgentBadge key={id} id={id} size={26} />) : <span className="text-[12.5px] text-muted">Nobody is in the meeting room right now. Discussions below are from the team channel.</span>}
+        {here.length ? here.map((id) => <AgentBadge key={id} id={id} size={26} />) : <span className="text-[12.5px] text-muted">Şu an toplantı odasında kimse yok. Aşağıdaki yazışmalar takım kanalından.</span>}
       </div>
       <CommsFeed height="max-h-[55vh]" />
     </Shell>
@@ -83,8 +83,8 @@ export function AssignModal() {
   const [title, setTitle] = useState('');
   const go = () => { if (title.trim()) { s.assignTask(agent, title); s.openModal(null); s.select(agent, 'tasks'); } };
   return (
-    <Shell title="Assign a task">
-      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted">Agent</label>
+    <Shell title="Görev ver">
+      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted">Ajan</label>
       <div className="mb-3 flex flex-wrap gap-1.5">
         {AGENT_IDS.map((id) => (
           <button key={id} onClick={() => setAgent(id)} className={`flex items-center gap-1.5 rounded-lg border px-2 py-1 text-[12.5px] ${agent === id ? 'border-accent bg-accent/15' : 'border-line hover:bg-white/6'}`}>
@@ -92,11 +92,11 @@ export function AssignModal() {
           </button>
         ))}
       </div>
-      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted">Task</label>
+      <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted">Görev</label>
       <input autoFocus value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => { e.stopPropagation(); if (e.key === 'Enter') go(); }}
-        placeholder="e.g. Add a dark mode toggle"
+        placeholder="örnek: karanlık mod düğmesi ekle"
         className="mb-3 w-full rounded-lg border border-line bg-black/30 px-3 py-2 text-[13px] outline-none focus:border-accent/60" />
-      <Btn variant="primary" onClick={go} disabled={!title.trim()}>Assign to {PROFILES[agent].name}</Btn>
+      <Btn variant="primary" onClick={go} disabled={!title.trim()}>{PROFILES[agent].name} kişisine ver</Btn>
     </Shell>
   );
 }
@@ -107,7 +107,7 @@ export function ManagerModal() {
   const list = Object.values(s.tasks).sort((a, b) => a.createdAt - b.createdAt);
   const [title, setTitle] = useState('');
   return (
-    <Shell title="Manager office · Task management" wide>
+    <Shell title="Müdür odası · Görevler" wide>
       <div className="mb-4 grid grid-cols-5 gap-2">
         {AGENT_IDS.map((id) => (
           <button key={id} onClick={() => { s.openModal(null); s.select(id); }} className="rounded-xl bg-black/25 p-2 text-left hover:bg-white/6">
@@ -118,18 +118,18 @@ export function ManagerModal() {
       </div>
       {s.adapter.can.submit && (
         <div className="mb-4 flex gap-2">
-          <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.stopPropagation()} placeholder="New project for the team…"
+          <input value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.stopPropagation()} placeholder="Takım için yeni proje…"
             className="flex-1 rounded-lg border border-line bg-black/30 px-3 py-2 text-[13px] outline-none focus:border-accent/60" />
-          <Btn variant="primary" disabled={!title.trim() || (!!project && project.status !== 'completed')} onClick={() => { s.submitProject(title); setTitle(''); s.openModal(null); }}>▶ Start project</Btn>
-          {s.adapter.can.assign && <Btn onClick={() => s.openModal('assign')}>＋ Assign task</Btn>}
+          <Btn variant="primary" disabled={!title.trim() || (!!project && project.status !== 'completed')} onClick={() => { s.submitProject(title); setTitle(''); s.openModal(null); }}>▶ Projeyi başlat</Btn>
+          {s.adapter.can.assign && <Btn onClick={() => s.openModal('assign')}>＋ Görev ver</Btn>}
         </div>
       )}
       <table className="w-full text-left text-[12.5px]">
         <thead className="text-[11px] uppercase tracking-wider text-muted">
-          <tr><th className="py-1.5">Task</th><th>Agent</th><th>Status</th><th className="w-32">Progress</th></tr>
+          <tr><th className="py-1.5">Görev</th><th>Ajan</th><th>Durum</th><th className="w-32">İlerleme</th></tr>
         </thead>
         <tbody>
-          {list.length === 0 && <tr><td colSpan={4} className="py-3 text-muted">No tasks yet.</td></tr>}
+          {list.length === 0 && <tr><td colSpan={4} className="py-3 text-muted">Henüz görev yok.</td></tr>}
           {list.map((t) => (
             <tr key={t.id} className="border-t border-line">
               <td className="py-1.5 pr-2">{t.title}</td>

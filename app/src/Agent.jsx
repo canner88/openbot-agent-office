@@ -11,7 +11,7 @@ import { STATE_LABEL } from './i18n.js';
 export default function Agent({ id }) {
   const a = useOffice((s) => s.agents[id]);
   const selected = useOffice((s) => s.selected === id);
-  const select = useOffice((s) => s.select);
+  const lookAt = useOffice((s) => s.lookAt);
   const arrived = useOffice((s) => s.arrived);
   const toWorld = useOffice((s) => s.layout.toWorld);
   const lowLight = useOffice((s) => s.sky.lamps > 0.5);
@@ -108,10 +108,13 @@ export default function Agent({ id }) {
   if (!a) return null;
   const showBubble = a.bubble && a.bubbleUntil > Date.now();
   const bad = a.state === 'panic' || a.state === 'down';
-  const tagClass = bad ? `bad ${vis ? `sev-${vis}` : ''}` : vis ? `flag sev-${vis}` : '';
+  const err = a.state === 'error';
+  const tagClass = bad ? `bad ${vis ? `sev-${vis}` : ''}` : err ? 'err' : vis ? `flag sev-${vis}` : '';
+  const rawLine = err ? (a.error || '') : a.state === 'working' ? (a.task || '') : (a.reply || '');
+  const line = rawLine.length > 80 ? rawLine.slice(0, 79) + '…' : rawLine;
 
   return (
-    <group ref={root} onClick={(e) => { e.stopPropagation(); select(id); }}>
+    <group ref={root} onClick={(e) => { e.stopPropagation(); lookAt(id); }}>
       <mesh ref={ring} rotation-x={-Math.PI / 2} position-y={0.025} visible={false}>
         <ringGeometry args={[0.5, 0.72, 48]} />
         <meshBasicMaterial color={sevColor} transparent opacity={0.8} depthWrite={false} toneMapped={false} />
@@ -135,6 +138,7 @@ export default function Agent({ id }) {
             <span className="tag-state">· {STATE_LABEL(a.state)}</span>
             {a.errors > 0 && <span className="tag-err">{a.errors}</span>}
           </div>
+          {line && <div className={`tag-line ${err ? 'err' : ''}`}>{line}</div>}
         </div>
       </Html>
     </group>

@@ -22,6 +22,12 @@ SELECT a.agent_id AS id, a.agent_json AS json,
   (SELECT th.title FROM projection_threads th
      WHERE th.agent_id = a.agent_id
      ORDER BY th.updated_at DESC LIMIT 1) AS title,
+  (SELECT json_extract(m.message_json, '$.text')
+     FROM projection_thread_messages m
+     JOIN projection_threads th ON th.thread_id = m.thread_id
+     WHERE th.agent_id = a.agent_id
+       AND m.author = 'assistant' AND m.item_type = 'final_answer'
+     ORDER BY m.created_at DESC LIMIT 1) AS reply,
   (SELECT m.item_type FROM projection_thread_messages m
      JOIN projection_threads th ON th.thread_id = m.thread_id
      WHERE th.agent_id = a.agent_id
@@ -66,9 +72,12 @@ function readAgents() {
       let id = slug(name, row.id);
       if (used.has(id)) id = `${id}-${String(row.id).slice(-4)}`;
       used.set(id, true);
-      const running = row.turn_status === 'running';
+      const turn = String(row.turn_status || '');
+      const running = turn === 'running';
       const waiting = Number(row.waits) > 0;
-      const status = waiting ? 'wait' : running ? 'work' : 'rest';
+      const failed = turn === 'failed' || turn === 'interrupted';
+      const status = waiting ? 'wait' : running ? 'work' : failed ? 'error' : 'rest';
+      const error = turn === 'interrupted' ? 'Tur yarıda kesildi.' : turn === 'failed' ? 'Son tur hata ile bitti.' : '';
       return {
         openbotId: String(row.id),
         id,
@@ -77,6 +86,8 @@ function readAgents() {
         role: clip(profile.title || '', 80),
         status,
         task: clip(row.title || '', 100),
+        reply: failed ? '' : clip(row.reply || '', 180),
+        error,
         item: String(row.item || 'edit'),
       };
     });
@@ -133,7 +144,7 @@ async function tick() {
         });
       }
     } else if (prev.sig !== sig) {
-      if ((a.status === 'work' || a.status === 'wait') && prev.status === 'rest') {
+      if ((a.status === 'work' || a.status === 'wait') && prev.status !== 'work' && prev.status !== 'wait') {
         events.push({ hook: 'SubagentStart', agent_type: a.id, agent_id: a.openbotId });
       }
       if (a.status === 'work' || a.status === 'wait') {
@@ -142,14 +153,14 @@ async function tick() {
           input: { description: a.task || a.status, subagent_type: a.id },
         });
       }
-      if (a.status === 'rest' && prev.status !== 'rest') {
-        events.push({ hook: 'SubagentStop', agent_type: a.id, agent_id: a.openbotId });
-      }
     }
     seen.set(a.id, { sig, status: a.status, openbotId: a.openbotId });
   }
-  const people = agents.map((a) => ({ id: a.id, name: a.name, status: a.status, task: a.task || '', openbotId: a.openbotId }));
-  const presenceSig = people.map((p) => `${p.id}|${p.status}|${p.task}`).join('\n');
+  const people = agents.map((a) => ({
+    id: a.id, name: a.name, status: a.status, task: a.task || '',
+    reply: a.reply || '', error: a.error || '', openbotId: a.openbotId,
+  }));
+  const presenceSig = people.map((p) => `${p.id}|${p.status}|${p.task}|${p.reply}|${p.error}`).join('\n');
   if (presenceSig !== lastPresence) {
     lastPresence = presenceSig;
     events.push({ hook: 'Presence', people });

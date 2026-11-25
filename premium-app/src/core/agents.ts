@@ -50,12 +50,12 @@ export function initialAgents(): Record<AgentId, Agent> {
 }
 
 export const STATUS_LABEL: Record<Agent['status'], string> = {
-  idle: 'Idle',
-  thinking: 'Thinking',
-  working: 'Working',
-  completed: 'Completed',
-  error: 'Error',
-  paused: 'Paused',
+  idle: 'Boş',
+  thinking: 'Düşünüyor',
+  working: 'Çalışıyor',
+  completed: 'Bitti',
+  error: 'Hata',
+  paused: 'Durdu',
 };
 
 export const STATUS_COLOR: Record<Agent['status'], string> = {

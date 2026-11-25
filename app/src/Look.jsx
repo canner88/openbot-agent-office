@@ -141,3 +141,40 @@ export function CinemaCamera() {
   });
   return null;
 }
+
+let focusGoal = null;
+export function cancelFocus() { focusGoal = null; }
+
+export function FocusCam() {
+  const focus = useOffice((s) => s.focus);
+  const boss = useOffice((s) => s.boss);
+  const cinema = useOffice((s) => s.cinema);
+  const layout = useOffice((s) => s.layout);
+  const camera = useThree((s) => s.camera);
+  const controls = useThree((s) => s.controls);
+
+  useEffect(() => {
+    if (!focus || boss || cinema) return;
+    const id = useOffice.getState().selected;
+    const agent = id && useOffice.getState().agents[id];
+    const seat = agent && layout.desks[agent.deskId]?.seat;
+    const stand = id && positions[id];
+    const spot = seat || (stand ? [stand.x, stand.z] : null);
+    if (!spot) return;
+    const [wx, wz] = layout.toWorld(spot);
+    focusGoal = {
+      look: new THREE.Vector3(wx, 1.1, wz),
+      pos: new THREE.Vector3(wx + 6.5, 5.2, wz + 6.5),
+    };
+  }, [focus, boss, cinema, layout]);
+
+  useFrame((_, dtRaw) => {
+    if (!focusGoal || boss || cinema || !controls) return;
+    const dt = Math.min(dtRaw, 0.1);
+    const k = 1 - Math.exp(-dt * 2.6);
+    controls.target.lerp(focusGoal.look, k);
+    camera.position.lerp(focusGoal.pos, k);
+    if (camera.position.distanceTo(focusGoal.pos) < 0.12 && controls.target.distanceTo(focusGoal.look) < 0.12) focusGoal = null;
+  });
+  return null;
+}

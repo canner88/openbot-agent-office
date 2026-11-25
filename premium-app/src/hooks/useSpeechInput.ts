@@ -18,7 +18,7 @@ const Ctor = (): (new () => SR) | null => {
 };
 
 /** Browser speech-to-text. Falls back gracefully when the browser has no support. */
-export function useSpeechInput(lang: 'en' | 'uz', onFinal: (text: string) => void) {
+export function useSpeechInput(lang: 'en' | 'uz' | 'tr', onFinal: (text: string) => void) {
   const supported = !!Ctor();
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState('');
@@ -29,10 +29,10 @@ export function useSpeechInput(lang: 'en' | 'uz', onFinal: (text: string) => voi
 
   const start = useCallback(() => {
     const C = Ctor();
-    if (!C) { setError('Speech recognition is not supported in this browser. Text chat still works.'); return; }
+    if (!C) { setError('Bu tarayıcı ses tanımayı desteklemiyor. Yazılı sohbet duruyor.'); return; }
     setError(null);
     const r = new C();
-    r.lang = lang === 'uz' ? 'uz-UZ' : 'en-US';
+    r.lang = lang === 'uz' ? 'uz-UZ' : lang === 'tr' ? 'tr-TR' : 'en-US';
     r.interimResults = true;
     r.continuous = false;
     r.onresult = (e) => {

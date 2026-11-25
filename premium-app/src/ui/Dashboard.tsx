@@ -4,7 +4,7 @@ import { AGENT_IDS } from '../core/types';
 import { PROFILES } from '../core/agents';
 import { AgentBadge, Btn, Progress, Section, StatusPill, clock } from './common';
 
-const EXAMPLES = ['Create a modern e-commerce website.', 'Build an admin dashboard with charts', 'Landing page for a coffee brand'];
+const EXAMPLES = ['Modern bir e-ticaret sitesi kur.', 'Grafikli bir yönetim paneli yap', 'Bir kahve markası için açılış sayfası'];
 
 function TaskInput() {
   const [text, setText] = useState('');
@@ -14,14 +14,14 @@ function TaskInput() {
   const busy = !!project && project.status !== 'completed';
   const go = () => { if (text.trim() && !busy) { submit(text); setText(''); } };
   return (
-    <Section title="New task for the team">
+    <Section title="Takıma yeni görev">
       <textarea value={text} onChange={(e) => setText(e.target.value)} rows={2} disabled={!can}
         onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); go(); } }}
-        placeholder={can ? 'e.g. Create a modern e-commerce website.' : 'Live mode: give tasks to Claude Code in your terminal'}
+        placeholder={can ? 'Örnek: modern bir e-ticaret sitesi kur.' : 'Canlı mod: görevi ajanın sohbetinden gönderin'}
         className="w-full resize-none rounded-lg border border-line bg-black/30 px-3 py-2 text-[13px] outline-none placeholder:text-muted/70 focus:border-accent/60" />
       <div className="mt-2 flex items-center gap-2">
-        <Btn variant="primary" onClick={go} disabled={!text.trim() || busy || !can} title={busy ? 'A project is already running' : ''}>▶ Start</Btn>
-        {busy && <span className="text-[11px] text-muted">Project in progress…</span>}
+        <Btn variant="primary" onClick={go} disabled={!text.trim() || busy || !can} title={busy ? 'Bir proje zaten sürüyor' : ''}>▶ Başlat</Btn>
+        {busy && <span className="text-[11px] text-muted">Proje sürüyor…</span>}
       </div>
       {can && !busy && (
         <div className="mt-2 flex flex-wrap gap-1">
@@ -46,10 +46,10 @@ function Stats() {
   const completed = list.filter((t) => t.status === 'completed').length;
   const pct = Math.round(project?.progress ?? 0);
   const cards = [
-    { label: 'Active Agents', value: `${active}/${staffed}`, color: '#22c55e' },
-    { label: 'Running Tasks', value: running, color: '#fbbf24' },
-    { label: 'Completed Tasks', value: completed, color: '#38bdf8' },
-    { label: 'Project Progress', value: `${pct}%`, color: '#7c9cff' },
+    { label: 'Aktif ajanlar', value: `${active}/${staffed}`, color: '#22c55e' },
+    { label: 'Süren görevler', value: running, color: '#fbbf24' },
+    { label: 'Biten görevler', value: completed, color: '#38bdf8' },
+    { label: 'Proje ilerlemesi', value: `${pct}%`, color: '#7c9cff' },
   ];
   return (
     <div className="grid grid-cols-2 gap-2">
@@ -61,7 +61,7 @@ function Stats() {
       ))}
       <div className="panel col-span-2 px-3 py-2.5">
         <div className="mb-1.5 flex items-center justify-between text-[12px]">
-          <span className="truncate font-semibold">{project ? project.title : 'No project yet'}</span>
+          <span className="truncate font-semibold">{project ? project.title : 'Henüz proje yok'}</span>
           <span className="ml-2 shrink-0 rounded px-1.5 py-0.5 text-[10.5px] font-bold uppercase text-muted">{project?.status ?? 'idle'}</span>
         </div>
         <Progress value={pct} color={project?.status === 'completed' ? '#22c55e' : '#7c9cff'} h={8} />
@@ -77,7 +77,7 @@ function AgentActivity() {
   const select = useOffice((s) => s.select);
   const selected = useOffice((s) => s.selectedId);
   return (
-    <Section title="Agent Activity">
+    <Section title="Ajan hareketleri">
       <div className="flex flex-col gap-1">
         {AGENT_IDS.filter((id) => agents[id] && !agents[id].vacant).map((id) => {
           const a = agents[id];
@@ -92,7 +92,7 @@ function AgentActivity() {
                   <StatusPill status={a.status} />
                 </div>
                 <div className="mt-1 flex items-center gap-2">
-                  <span className="truncate text-[11px] text-muted">{t ? t.title : a.place === 'meeting' ? 'In the meeting room' : a.place === 'coffee' ? 'Coffee break' : a.place === 'security' ? 'In Cyber Security' : '—'}</span>
+                  <span className={`truncate text-[11px] ${a.status === 'error' ? 'text-red-300' : 'text-muted'}`}>{t ? t.title : a.place === 'meeting' ? 'Toplantı odasında' : a.place === 'coffee' ? 'Kahve molası' : a.place === 'security' ? 'Siber güvenlikte' : '—'}</span>
                 </div>
                 {t && <div className="mt-1"><Progress value={t.progress} color={a.color} h={4} /></div>}
               </div>
@@ -109,12 +109,12 @@ function Timeline() {
   const project = useOffice(selectProject);
   const select = useOffice((s) => s.select);
   const list = useMemo(() => (project ? project.taskIds.map((i) => tasks[i]).filter(Boolean) : Object.values(tasks)), [project, tasks]);
-  if (!list.length) return <Section title="Task Timeline"><p className="text-[12px] text-muted">Tasks appear here once the manager splits the project.</p></Section>;
+  if (!list.length) return <Section title="Görev zaman çizelgesi"><p className="text-[12px] text-muted">Müdür projeyi bölünce görevler burada görünür.</p></Section>;
   const start = Math.min(...list.map((t) => t.startedAt ?? t.createdAt));
   const end = Math.max(Date.now(), ...list.map((t) => t.completedAt ?? Date.now()));
   const span = Math.max(1, end - start);
   return (
-    <Section title="Task Timeline" right={<span className="text-[11px] text-muted">{list.filter((t) => t.status === 'completed').length}/{list.length} done</span>}>
+    <Section title="Görev zaman çizelgesi" right={<span className="text-[11px] text-muted">{list.filter((t) => t.status === 'completed').length}/{list.length} bitti</span>}>
       <div className="scroll-thin flex max-h-56 flex-col gap-1 overflow-y-auto pr-1">
         {list.map((t) => {
           const s0 = t.startedAt ? ((t.startedAt - start) / span) * 100 : 0;
@@ -143,9 +143,9 @@ function RecentLog() {
   const logs = useOffice((s) => s.logs);
   const recent = logs.filter((l) => l.kind !== 'status').slice(-7).reverse();
   return (
-    <Section title="Recent activity">
+    <Section title="Son hareket">
       <div className="flex flex-col gap-1">
-        {recent.length === 0 && <p className="text-[12px] text-muted">Nothing yet.</p>}
+        {recent.length === 0 && <p className="text-[12px] text-muted">Henüz yok.</p>}
         {recent.map((l) => (
           <div key={l.id} className="flex items-baseline gap-2 text-[11.5px]">
             <span className="shrink-0 font-mono text-[10.5px] text-muted">{clock(l.ts)}</span>

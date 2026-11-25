@@ -17,7 +17,7 @@ interface HookEvent {
   tool_use_id?: string;
   error?: string;
   team?: TeamRole[];
-  presence?: { id: string; name?: string; status?: string; task?: string; openbotId?: string }[];
+  presence?: { id: string; name?: string; status?: string; task?: string; reply?: string; error?: string; openbotId?: string }[];
   people?: { id: string; name?: string; status?: string; task?: string; openbotId?: string }[];
   project?: string;
   text?: string;
@@ -80,6 +80,8 @@ export class PluginAdapter implements AgentDataAdapter {
   private project: Project | null = null;
   private open = new Map<AgentId, Task & { toolUseId?: string; startedReal: number }>();
   private calm = new Map<AgentId, object>();
+  private replies = new Map<string, string>();
+  private live = new Map<string, string>();
   onStatus?: (s: 'connecting' | 'open' | 'error') => void;
   onTeam?: () => void;
 
@@ -152,22 +154,38 @@ export class PluginAdapter implements AgentDataAdapter {
       const id = seatFor(p.id);
       if (!PROFILES[id]) continue;
       const working = p.status === 'work' || p.status === 'wait';
+      const failed = p.status === 'error';
+      const reply = failed ? '' : (p.reply || '');
+      const error = failed ? (p.error || 'Son tur hata ile bitti.') : '';
+      const title = failed ? error : working ? (p.task || '') : (reply || p.task || '');
       const taskId = `live-${id}`;
-      if (p.task) {
+      if (title) {
         this.ctx.emit({
           type: 'task.upsert',
-          task: { id: taskId, projectId: null, title: p.task, assignee: id, status: working ? 'running' : 'completed', progress: working ? 40 : 100, dependsOn: [], effort: 0, createdAt: now(), source: 'user' },
+          task: {
+            id: taskId, projectId: null, title, assignee: id,
+            status: failed ? 'error' : working ? 'running' : 'completed',
+            progress: working ? 40 : 100, dependsOn: [], effort: 0, createdAt: now(), source: 'user',
+          },
         });
       }
       const patch: Partial<Agent> = {
-        status: working ? 'working' : 'idle',
+        status: failed ? 'error' : working ? 'working' : 'idle',
         place: 'desk',
-        currentTaskId: p.task ? taskId : null,
+        currentTaskId: title ? taskId : null,
         vacant: false,
         arrived: true,
       };
       if (p.name && (id !== 'manager' || p.id === 'director')) patch.name = p.name;
+      this.live.set(id, String(p.status || 'rest'));
       this.patch(id, patch);
+      if (reply && this.replies.get(id) !== reply) {
+        this.replies.set(id, reply);
+        this.ctx.emit({
+          type: 'message',
+          message: { id: uid('msg'), ts: now(), from: id, to: 'user', text: reply, channel: 'direct' },
+        });
+      }
     }
   }
 
@@ -281,8 +299,11 @@ export class PluginAdapter implements AgentDataAdapter {
           emit({ type: 'task.upsert', task: plain });
         }
         this.calm.delete(who);
-        this.patch(who, { status: 'working', place: 'desk' });
-        this.log(who, 'action', describe(tool, ev.input));
+        const live = this.live.get(who);
+        if (!live || live === 'work' || live === 'wait') {
+          this.patch(who, { status: 'working', place: 'desk' });
+          this.log(who, 'action', describe(tool, ev.input));
+        }
         return;
       }
       case 'PostToolUse': {
@@ -300,7 +321,7 @@ export class PluginAdapter implements AgentDataAdapter {
         const err = short(String(ev.error ?? '').split('\n').find((l) => l.trim()) ?? '', 90);
         this.patch(who, { status: 'error' });
         this.log(who, 'error', `${tool} failed${err ? `: ${err}` : ''}`);
-        this.settle(who, 4000, { status: 'working' });
+        if (this.live.get(who) === 'work' || this.live.get(who) === 'wait') this.settle(who, 4000, { status: 'working' });
         return;
       }
       case 'SubagentStop': {

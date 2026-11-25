@@ -5,13 +5,14 @@ import type { AgentId } from '../core/types';
 import { AgentBadge, Btn, Progress, StatusPill, clock } from './common';
 import { CommsFeed } from './CommsPanel';
 
-const PLACE: Record<string, string> = { desk: 'At the desk', meeting: 'Meeting room', whiteboard: 'At the whiteboard', coffee: 'Coffee bar', visit: 'Visiting a teammate', security: 'Cyber Security' };
+const PLACE: Record<string, string> = { desk: 'Masada', meeting: 'Toplantı odasında', whiteboard: 'Beyaz tahtada', coffee: 'Kahvede', visit: 'Bir arkadaşa gitti', security: 'Siber güvenlikte' };
 const TABS: { id: PanelTab; label: string }[] = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'tasks', label: 'Tasks' },
-  { id: 'activity', label: 'Activity' },
-  { id: 'comms', label: 'Comms' },
+  { id: 'overview', label: 'Genel bakış' },
+  { id: 'tasks', label: 'Görevler' },
+  { id: 'activity', label: 'Hareket' },
+  { id: 'comms', label: 'İletiler' },
 ];
+const TASK_TR: Record<string, string> = { queued: 'kuyrukta', running: 'sürüyor', completed: 'bitti', error: 'hata', paused: 'durdu' };
 
 export function AgentPanel({ id }: { id: AgentId }) {
   const s = useOffice();
@@ -34,16 +35,16 @@ export function AgentPanel({ id }: { id: AgentId }) {
           </div>
           <div className="text-[12px] text-muted">{a.role} · {PLACE[a.place] ?? a.place}</div>
         </div>
-        <button onClick={() => s.select(null)} className="rounded-md px-2 py-1 text-muted hover:bg-white/8 hover:text-ink" aria-label="Close">✕</button>
+        <button onClick={() => s.select(null)} className="rounded-md px-2 py-1 text-muted hover:bg-white/8 hover:text-ink" aria-label="Kapat">✕</button>
       </div>
 
       <div className="flex flex-wrap gap-1.5 border-b border-line p-3">
-        <Btn variant="primary" onClick={() => s.openChat(id)} disabled={!can.chat}>💬 Talk</Btn>
-        <Btn onClick={() => s.setTab('tasks')}>View Tasks</Btn>
-        <Btn onClick={() => s.setTab('activity')}>View Activity</Btn>
-        <Btn onClick={() => s.openModal('assign', id)} disabled={!can.assign}>＋ Assign Task</Btn>
+        <Btn variant="primary" onClick={() => s.openChat(id)} disabled={!can.chat}>💬 Konuş</Btn>
+        <Btn onClick={() => s.setTab('tasks')}>Görevler</Btn>
+        <Btn onClick={() => s.setTab('activity')}>Hareket</Btn>
+        <Btn onClick={() => s.openModal('assign', id)} disabled={!can.assign}>＋ Görev ver</Btn>
         <Btn variant={a.status === 'paused' ? 'primary' : 'danger'} onClick={() => s.togglePause(id)} disabled={!can.pause}>
-          {a.status === 'paused' ? '▶ Resume' : '❚❚ Pause'}
+          {a.status === 'paused' ? '▶ Sürdür' : '❚❚ Durdur'}
         </Btn>
       </div>
 
@@ -59,23 +60,23 @@ export function AgentPanel({ id }: { id: AgentId }) {
           <div className="flex flex-col gap-3">
             <p className="text-[12.5px] text-ink/80">{PROFILES[id].bio}</p>
             <div className="rounded-lg border border-line bg-black/20 p-3">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted">Current task</div>
-              <div className="mt-1 text-[13.5px] font-semibold">{current ? current.title : 'No active task'}</div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted">Şu anki görev</div>
+              <div className={`mt-1 text-[13.5px] font-semibold ${a.status === 'error' ? 'text-red-300' : ''}`}>{current ? current.title : 'Aktif görev yok'}</div>
               {current && (
                 <>
-                  <div className="mt-2 flex items-center justify-between text-[11px] text-muted"><span>Progress</span><span className="font-mono">{Math.round(current.progress)}%</span></div>
+                  <div className="mt-2 flex items-center justify-between text-[11px] text-muted"><span>İlerleme</span><span className="font-mono">{Math.round(current.progress)}%</span></div>
                   <Progress value={current.progress} color={a.color} h={7} />
                 </>
               )}
             </div>
             <div className="grid grid-cols-3 gap-2 text-center">
-              {[['Assigned', tasks.length], ['Done', done.length], ['Queued', tasks.filter((t) => t.status === 'queued').length]].map(([l, v]) => (
+              {[['Atanan', tasks.length], ['Biten', done.length], ['Kuyrukta', tasks.filter((t) => t.status === 'queued').length]].map(([l, v]) => (
                 <div key={l} className="rounded-lg bg-white/5 py-2"><div className="text-[18px] font-bold">{v}</div><div className="text-[10.5px] uppercase tracking-wider text-muted">{l}</div></div>
               ))}
             </div>
             <div>
-              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted">Results</div>
-              {done.length === 0 && <p className="text-[12px] text-muted">No finished work yet.</p>}
+              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted">Sonuçlar</div>
+              {done.length === 0 && <p className="text-[12px] text-muted">Henüz biten iş yok.</p>}
               {done.slice(-6).reverse().map((t) => (
                 <div key={t.id} className="mb-1.5 rounded-lg bg-emerald-400/[0.06] px-2.5 py-1.5">
                   <div className="text-[12.5px] font-semibold text-emerald-200">✓ {t.title}</div>
@@ -88,17 +89,17 @@ export function AgentPanel({ id }: { id: AgentId }) {
 
         {s.tab === 'tasks' && (
           <div className="flex flex-col gap-1.5">
-            {tasks.length === 0 && <p className="text-[12px] text-muted">No tasks assigned yet.</p>}
+            {tasks.length === 0 && <p className="text-[12px] text-muted">Henüz görev yok.</p>}
             {tasks.map((t) => (
               <div key={t.id} className="rounded-lg border border-line bg-black/20 p-2.5">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[12.5px] font-semibold">{t.title}</span>
-                  <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${t.status === 'completed' ? 'bg-emerald-400/15 text-emerald-300' : t.status === 'running' ? 'bg-amber-400/15 text-amber-300' : t.status === 'paused' ? 'bg-violet-400/15 text-violet-300' : t.status === 'error' ? 'bg-red-400/15 text-red-300' : 'bg-white/8 text-muted'}`}>{t.status}</span>
+                  <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${t.status === 'completed' ? 'bg-emerald-400/15 text-emerald-300' : t.status === 'running' ? 'bg-amber-400/15 text-amber-300' : t.status === 'paused' ? 'bg-violet-400/15 text-violet-300' : t.status === 'error' ? 'bg-red-400/15 text-red-300' : 'bg-white/8 text-muted'}`}>{TASK_TR[t.status] ?? t.status}</span>
                 </div>
                 <div className="mt-1.5"><Progress value={t.status === 'completed' ? 100 : t.progress} color={a.color} h={4} /></div>
                 <div className="mt-1 flex justify-between text-[10.5px] text-muted">
-                  <span>{t.source === 'user' ? 'from you' : t.source === 'qa' ? 'bug fix from QA' : 'from the plan'}</span>
-                  {t.dependsOn.length > 0 && t.status === 'queued' && <span>waiting for {t.dependsOn.length} step(s)</span>}
+                  <span>{t.source === 'user' ? 'senden' : t.source === 'qa' ? 'testten gelen düzeltme' : 'plandan'}</span>
+                  {t.dependsOn.length > 0 && t.status === 'queued' && <span>{t.dependsOn.length} adım bekleniyor</span>}
                 </div>
               </div>
             ))}
@@ -107,7 +108,7 @@ export function AgentPanel({ id }: { id: AgentId }) {
 
         {s.tab === 'activity' && (
           <div className="flex flex-col gap-1">
-            {logs.length === 0 && <p className="text-[12px] text-muted">No activity yet.</p>}
+            {logs.length === 0 && <p className="text-[12px] text-muted">Henüz hareket yok.</p>}
             {logs.map((l) => (
               <div key={l.id} className="flex gap-2 text-[12px]">
                 <span className="shrink-0 font-mono text-[10.5px] text-muted">{clock(l.ts)}</span>

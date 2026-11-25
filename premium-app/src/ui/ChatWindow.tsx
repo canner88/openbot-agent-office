@@ -6,10 +6,7 @@ import { PROFILES } from '../core/agents';
 import { AgentBadge, StatusPill } from './common';
 import { useSpeechInput } from '../hooks/useSpeechInput';
 
-const SUGGEST = {
-  uz: ['Hozir nima qilyapsan?', 'Qanday muammolar bor?', 'Qancha qoldi?', 'Keyingi vazifang nima?'],
-  en: ['What are you doing now?', 'Any problems?', 'How far along are you?', "What's next?"],
-};
+const SUGGEST_TR = ['Şu an ne yapıyorsun?', 'Bir sorun var mı?', 'Ne kadar kaldı?', 'Sıradaki işin ne?'];
 
 function SpeakingBars({ color }: { color: string }) {
   return (
@@ -37,7 +34,7 @@ export function ChatWindow({ id }: { id: AgentId }) {
     useOffice.getState().ask(id, q);
     setText('');
   }, [id]);
-  const voice = useSpeechInput(s.lang, send);
+  const voice = useSpeechInput('tr', send);
 
   useEffect(() => { input.current?.focus(); }, [id]);
   useEffect(() => { box.current?.scrollTo({ top: box.current.scrollHeight, behavior: 'smooth' }); }, [messages.length, s.chatPending]);
@@ -58,13 +55,13 @@ export function ChatWindow({ id }: { id: AgentId }) {
           </div>
           <div className="truncate text-[11.5px] text-muted">{PROFILES[id].role}{task ? ` · ${task.title} (${Math.round(task.progress)}%)` : ''}</div>
         </div>
-        <button onClick={() => s.openChat(null)} className="rounded-md px-2 py-1 text-muted hover:bg-white/8 hover:text-ink" aria-label="Close chat">✕</button>
+        <button onClick={() => s.openChat(null)} className="rounded-md px-2 py-1 text-muted hover:bg-white/8 hover:text-ink" aria-label="Sohbeti kapat">✕</button>
       </div>
 
       <div ref={box} className="scroll-thin flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3">
         {messages.length === 0 && (
           <div className="rounded-lg bg-white/[0.04] p-3 text-[12.5px] text-ink/80">
-            {s.lang === 'uz' ? `${a.name} bilan gaplashing: nima ustida ishlayotgani, muammolar yoki keyingi vazifasi haqida so‘rang.` : `Say hi to ${a.name}. Ask what they're working on, any blockers, or what's next.`}
+            {`${a.name} ile konuş. Ne üzerinde çalıştığını, bir sorun olup olmadığını ya da sıradaki işi sor.`}
           </div>
         )}
         {messages.map((m) => (
@@ -72,11 +69,11 @@ export function ChatWindow({ id }: { id: AgentId }) {
             {m.text}
           </div>
         ))}
-        {s.chatPending && <div className="self-start rounded-2xl bg-white/8 px-3 py-2 text-[13px] text-muted">{a.name} is typing…</div>}
+        {s.chatPending && <div className="self-start rounded-2xl bg-white/8 px-3 py-2 text-[13px] text-muted">{a.name} yazıyor…</div>}
       </div>
 
       <div className="flex flex-wrap gap-1 px-3 pb-2">
-        {SUGGEST[s.lang].map((q) => (
+        {SUGGEST_TR.map((q) => (
           <button key={q} onClick={() => send(q)} className="rounded-full bg-white/6 px-2.5 py-1 text-[11.5px] text-ink/80 hover:bg-white/12">{q}</button>
         ))}
       </div>
@@ -85,19 +82,19 @@ export function ChatWindow({ id }: { id: AgentId }) {
 
       <form className="flex items-center gap-2 border-t border-line p-2.5" onSubmit={(e) => { e.preventDefault(); send(text); }}>
         <button type="button" onClick={voice.listening ? voice.stop : voice.start}
-          title={voice.supported ? 'Speak to the agent' : 'Speech recognition is not supported in this browser'}
+          title={voice.supported ? 'Ajana konuş' : 'Bu tarayıcı ses tanımayı desteklemiyor'}
           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition ${voice.listening ? 'animate-pulse border-red-400 bg-red-500/30' : 'border-line bg-white/6 hover:bg-white/12'} ${voice.supported ? '' : 'opacity-40'}`}>
           🎙
         </button>
         <input ref={input} value={text} onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Escape') s.openChat(null); e.stopPropagation(); }}
-          placeholder={s.lang === 'uz' ? `${a.name}ga yozing…` : `Message ${a.name}…`}
+          placeholder={`${a.name} ile konuş…`}
           className="min-w-0 flex-1 rounded-lg border border-line bg-black/30 px-3 py-2 text-[13px] outline-none focus:border-accent/60" />
-        <button type="button" onClick={() => s.setVoice(!s.voiceOn)} title="Read replies aloud"
+        <button type="button" onClick={() => s.setVoice(!s.voiceOn)} title="Yanıtları sesli oku"
           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line ${s.voiceOn ? 'bg-white/14' : 'bg-white/6 opacity-60'}`}>
           {s.voiceOn ? '🔊' : '🔈'}
         </button>
-        <button type="submit" disabled={!text.trim() || s.chatPending} className="rounded-lg bg-accent px-3 py-2 text-[13px] font-bold text-slate-950 disabled:opacity-40">Send</button>
+        <button type="submit" disabled={!text.trim() || s.chatPending} className="rounded-lg bg-accent px-3 py-2 text-[13px] font-bold text-slate-950 disabled:opacity-40">Gönder</button>
       </form>
     </motion.div>
   );

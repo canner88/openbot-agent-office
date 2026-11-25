@@ -39,6 +39,10 @@ function AgentFigure({ id }: { id: AgentId }) {
   const selected = useOffice((s) => s.selectedId === id);
   const speed = useOffice((s) => s.speed);
   const select = useOffice((s) => s.select);
+  const taskTitle = useOffice((s) => {
+    const cur = s.agents[id]?.currentTaskId;
+    return cur ? s.tasks[cur]?.title ?? '' : '';
+  });
   const lastLine = useOffice((s) => {
     for (let i = s.messages.length - 1; i >= 0; i--) {
       const m = s.messages[i];
@@ -136,6 +140,12 @@ function AgentFigure({ id }: { id: AgentId }) {
             {agent.name}
             <span className="font-normal text-slate-400">· {STATUS_LABEL[agent.status]}</span>
           </div>
+          {taskTitle && (
+            <div className="max-w-[220px] truncate rounded-md px-2 py-0.5 text-[11px] font-medium"
+              style={{ background: agent.status === 'error' ? 'rgba(153, 27, 27, 0.92)' : 'rgba(15, 23, 42, 0.88)', color: agent.status === 'error' ? '#fecaca' : '#e2e8f0' }}>
+              {taskTitle.length > 80 ? taskTitle.slice(0, 79) + '…' : taskTitle}
+            </div>
+          )}
         </div>
       </Html>
     </group>

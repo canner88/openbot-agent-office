@@ -28,6 +28,7 @@ interface OfficeState extends OfficeSnapshot {
   cameraStyle: CameraStyle;
   preset: CameraPreset;
   presetNonce: number;
+  lookNonce: number;
   /** A camera shot for recording video (id from scene/shots.ts), playing in Overview. */
   shot: string | null;
   selectedId: AgentId | null;
@@ -72,8 +73,8 @@ const MAX_MESSAGES = 400;
 function speak(text: string, lang: Lang) {
   if (!('speechSynthesis' in window)) return;
   const u = new SpeechSynthesisUtterance(text.replace(/[✅"]/g, ''));
-  u.lang = lang === 'uz' ? 'uz-UZ' : 'en-US';
-  const voice = speechSynthesis.getVoices().find((v) => v.lang.toLowerCase().startsWith(lang === 'uz' ? 'uz' : 'en'));
+  u.lang = lang === 'uz' ? 'uz-UZ' : 'tr-TR';
+  const voice = speechSynthesis.getVoices().find((v) => v.lang.toLowerCase().startsWith(lang === 'uz' ? 'uz' : 'tr'));
   if (voice) u.voice = voice;
   u.rate = 1.05;
   speechSynthesis.cancel();
@@ -115,6 +116,7 @@ export const useOffice = create<OfficeState>((set, get) => {
     cameraStyle: 'third',
     preset: 'overview',
     presetNonce: 0,
+    lookNonce: 0,
     shot: null,
     selectedId: null,
     tab: 'overview',
@@ -196,7 +198,15 @@ export const useOffice = create<OfficeState>((set, get) => {
     setCameraStyle(c) { set({ cameraStyle: c }); },
     goPreset(p) { set((s) => ({ preset: p, presetNonce: s.presetNonce + 1 })); },
     playShot(id) { set({ shot: id, selectedId: null, modal: null, chatWith: null }); },
-    select(id, tab) { set({ selectedId: id, tab: tab ?? 'overview' }); },
+    select(id, tab) {
+      set((s) => ({
+        selectedId: id,
+        tab: tab ?? 'overview',
+        lookNonce: id ? s.lookNonce + 1 : s.lookNonce,
+        mode: id && s.mode === 'life' ? 'overview' : s.mode,
+        dashboardOpen: id && s.mode === 'life' ? true : s.dashboardOpen,
+      }));
+    },
     setTab(t) { set({ tab: t }); },
     openChat(id) { set({ chatWith: id }); },
     openModal(m, assignFor = null) { set({ modal: m, assignFor }); },

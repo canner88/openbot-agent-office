@@ -31,7 +31,7 @@ function broadcast(ev) {
   if (ev.hook === 'Log') { recentLogs.push(ev); if (recentLogs.length > 40) recentLogs.shift(); }
   if (ev.hook === 'Presence' && Array.isArray(ev.people)) {
     presence.clear();
-    for (const p of ev.people) if (p && p.id) presence.set(p.id, { id: p.id, name: p.name, status: p.status, task: p.task, openbotId: p.openbotId });
+    for (const p of ev.people) if (p && p.id) presence.set(p.id, { id: p.id, name: p.name, status: p.status, task: p.task || '', reply: p.reply || '', error: p.error || '', openbotId: p.openbotId });
   }
   const data = `data: ${JSON.stringify(ev)}\n\n`;
   for (const c of clients) c.write(data);

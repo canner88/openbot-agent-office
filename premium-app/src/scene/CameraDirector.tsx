@@ -7,7 +7,8 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import * as THREE from 'three';
 import { useOffice, type CameraPreset } from '../store/useOffice';
 import { findShot, shotAt } from './shots';
-import { shotCamera } from '../world/runtime';
+import { agentBodies, shotCamera } from '../world/runtime';
+import { deskSeat } from '../world/layout';
 import { RENDER } from './RenderController';
 
 const V = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
@@ -26,6 +27,8 @@ export function CameraDirector() {
   const style = useOffice((s) => s.cameraStyle);
   const preset = useOffice((s) => s.preset);
   const nonce = useOffice((s) => s.presetNonce);
+  const lookNonce = useOffice((s) => s.lookNonce);
+  const selectedId = useOffice((s) => s.selectedId);
   const { camera } = useThree();
   const controls = useRef<OrbitControlsImpl | null>(null);
   const flight = useRef<{ pos: THREE.Vector3; look: THREE.Vector3 } | null>(null);
@@ -48,6 +51,15 @@ export function CameraDirector() {
     if (mode === 'overview') flight.current = PRESETS[preset];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nonce]);
+
+  useEffect(() => {
+    if (!lookNonce || mode !== 'overview' || !selectedId) return;
+    const seat = deskSeat(selectedId);
+    const body = agentBodies[selectedId];
+    const x = body && body.x < 1e3 ? body.x : seat.x;
+    const z = body && body.x < 1e3 ? body.z : seat.z;
+    flight.current = { pos: V(x + 4.8, 8.2, z + 6.2), look: V(x, 1.5, z) };
+  }, [lookNonce, mode, selectedId]);
 
   // Keep the orbit target continuous when the controls (re)mount.
   useEffect(() => {

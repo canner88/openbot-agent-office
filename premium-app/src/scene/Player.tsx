@@ -202,11 +202,11 @@ export function Player() {
       }
       for (const o of INTERACTABLES) {
         const d = Math.hypot(o.x - player.x, o.z - player.z);
-        if (d < 1.8 && (!best || d < best.d - 0.4)) best = { kind: 'object', id: o.id, d, label: `Press E · ${o.label}${o.agent ? ` (${PROFILES[o.agent].name})` : ''}` };
+        if (d < 1.8 && (!best || d < best.d - 0.4)) best = { kind: 'object', id: o.id, d, label: `E ile ${o.label}${o.agent ? ` (${PROFILES[o.agent].name})` : ''}` };
       }
       nearby.kind = best?.kind ?? null;
       nearby.id = best?.id ?? null;
-      s.setHint(frozen ? null : player.seat ? 'Press E to stand up' : best?.label ?? null);
+      s.setHint(frozen ? null : player.seat ? 'E ile ayağa kalk' : best?.label ?? null);
     }
   });
 
