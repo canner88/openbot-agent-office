@@ -1,6 +1,6 @@
 // Boshliq rejimi: siz ofis bo'ylab yurasiz (WASD), kamera orqangizdan ergashadi (3-shaxs),
 // stolga yaqinlashsangiz monitordagi loglarni ochib ko'rasiz (E).
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
@@ -185,6 +185,37 @@ export function BossController() {
 // ---------- Ekran ustidagi qism (DOM) ----------
 const LV = { error: 'err', warn: 'warn', info: '' };
 
+function DeskAsk({ agent }) {
+  const [text, setText] = useState('');
+  const [note, setNote] = useState('');
+  async function send(e) {
+    e.preventDefault();
+    const q = text.trim();
+    if (!q) return;
+    if (!agent.openbotId) { setNote('OpenBot bağlantısı yok.'); return; }
+    setNote('Gönderiliyor…');
+    try {
+      const r = await fetch('/openbot/ask', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: agent.openbotId, text: q }),
+      });
+      const j = await r.json().catch(() => ({}));
+      setNote(r.ok ? 'Gönderildi.' : (j.error || 'Gönderilemedi.'));
+      if (r.ok) setText('');
+    } catch {
+      setNote('Ofis sunucusuna ulaşılamadı.');
+    }
+  }
+  return (
+    <form onSubmit={send} onClick={(e) => e.stopPropagation()} style={{ display: 'flex', gap: 6, alignItems: 'center', width: '100%', marginTop: 6 }}>
+      <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Görev yaz" style={{ flex: 1, minWidth: 0 }} />
+      <button type="submit">Gönder</button>
+      {note && <span>{note}</span>}
+    </form>
+  );
+}
+
 export function BossHud() {
   const { boss, nearScreen, screenOpen, setScreenOpen, setBoss, agents, services, feed } = useOffice();
   if (!boss) return null;
@@ -221,6 +252,7 @@ export function BossHud() {
                 <span>{tr('task:')} <b>{agent.task || '—'}</b></span>
                 <span>{tr('errors:')} <b className={agent.errors ? 'err' : ''}>{agent.errors}</b></span>
                 {agent.down && <span className="err">💥 {agent.down.service} {agent.down.reason}</span>}
+                <DeskAsk agent={agent} />
               </div>
             )}
             <div className="term-body">

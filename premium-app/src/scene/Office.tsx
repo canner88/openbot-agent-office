@@ -320,7 +320,7 @@ function Whiteboard() {
 
 function MeetingScreen() {
   const project = useOffice(selectProject);
-  const inMeeting = useOffice((s) => AGENT_IDS.filter((id) => s.agents[id].place === 'meeting' && s.agents[id].arrived).length);
+  const inMeeting = useOffice((s) => AGENT_IDS.filter((id) => s.agents[id]?.place === 'meeting' && s.agents[id]?.arrived).length);
   const last = useOffice((s) => [...s.messages].reverse().find((m) => m.inMeeting));
   const tex = useCanvasTexture(1024, 600, (ctx, w, h) => {
     const g = ctx.createLinearGradient(0, 0, w, h);
@@ -669,9 +669,10 @@ function Lounge() {
 }
 
 function Workspace() {
+  const roster = useOffice((s) => s.roster);
   return (
     <group>
-      {AGENT_IDS.filter((id) => id !== 'manager').map((id) => <Workstation key={id} id={id} x={DESKS[id].x} z={DESKS[id].z} />)}
+      {AGENT_IDS.filter((id) => id !== 'manager' && DESKS[id] && !SOC_DESKS.some((d) => d.x === DESKS[id].x && d.z === DESKS[id].z)).map((id) => <Workstation key={`${roster}-${id}`} id={id} x={DESKS[id].x} z={DESKS[id].z} />)}
       {STAFF_DESKS.map((d, i) => <StaffDesk key={i} x={d.x} z={d.z} seed={i + 2} empty={i % 4 === 3} />)}
       <Whiteboard />
       <WallSign position={[WHITEBOARD.x, 2.84, WHITEBOARD.z + 0.05]} />

@@ -85,7 +85,7 @@ export function Workstation({ id, x, z, rot = 0 }: { id: AgentId; x: number; z: 
   const [hot, setHot] = useState(false);
   const click = (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); select(id, 'tasks'); };
   const isManager = id === 'manager';
-  const color = PROFILES[id].color;
+  const color = PROFILES[id]?.color ?? '#3b82f6';
   return (
     <group position={[x, 0, z]} rotation-y={rot}>
       {!isManager && <Cubicle x={0} z={0} seed={id.length * 3 + x} />}
@@ -108,7 +108,7 @@ export function Workstation({ id, x, z, rot = 0 }: { id: AgentId; x: number; z: 
       <Prop name="Computer_Mouse_01" position={[0.62, DESK_TOP + 0.01, 0.18]} />
       <Prop name="Desklamp_01" position={[-0.78, DESK_TOP, -0.28]} rot={0.4} />
       <Prop name="Computer_Tower_Modern_01" position={[0.72, 0, -0.12]} />
-      {EXTRAS[id].map(([name, ex, ez, r], i) => <Prop key={i} name={name} position={[ex, DESK_TOP, ez]} rot={r ?? 0} />)}
+      {(EXTRAS[id] ?? []).map(([name, ex, ez, r], i) => <Prop key={i} name={name} position={[ex, DESK_TOP, ez]} rot={r ?? 0} />)}
       <Prop name={isManager ? 'Chair_10' : 'Chair_05'} position={[0, 0, 0.82]} rot={Math.PI} />
       {/* name plate in the owner's color */}
       <mesh position={[0.45, DESK_TOP + 0.04, 0.4]} rotation={[-0.6, 0, 0]}>

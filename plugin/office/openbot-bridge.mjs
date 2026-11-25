@@ -108,7 +108,7 @@ const toolOf = (item) => {
 };
 
 const seen = new Map();
-let lastSync = 0;
+let lastPresence = '';
 
 async function tick() {
   const agents = readAgents();
@@ -148,16 +148,11 @@ async function tick() {
     }
     seen.set(a.id, { sig, status: a.status, openbotId: a.openbotId });
   }
-  // A browser that connects later only receives new events, so repeat the live set.
-  if (Date.now() - lastSync > 12_000) {
-    lastSync = Date.now();
-    for (const a of agents) {
-      if (a.status !== 'work' && a.status !== 'wait') continue;
-      events.push({
-        hook: 'PreToolUse', agent_type: a.id, agent_id: a.openbotId, tool: toolOf(a.item),
-        input: { description: a.task || a.name, subagent_type: a.id },
-      });
-    }
+  const people = agents.map((a) => ({ id: a.id, name: a.name, status: a.status, task: a.task || '', openbotId: a.openbotId }));
+  const presenceSig = people.map((p) => `${p.id}|${p.status}|${p.task}`).join('\n');
+  if (presenceSig !== lastPresence) {
+    lastPresence = presenceSig;
+    events.push({ hook: 'Presence', people });
   }
   if (events.length) await post(events);
   return agents.length;

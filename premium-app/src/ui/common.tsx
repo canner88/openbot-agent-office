@@ -13,7 +13,7 @@ export function StatusPill({ status }: { status: AgentStatus }) {
 }
 
 export function AgentBadge({ id, size = 28 }: { id: AgentId; size?: number }) {
-  const p = PROFILES[id];
+  const p = PROFILES[id] ?? { id, name: id, role: '', color: '#3b82f6', bio: '' };
   return (
     <span className="inline-flex shrink-0 items-center justify-center rounded-full font-bold text-white" style={{ width: size, height: size, background: p.color, fontSize: size * 0.42 }}>
       {p.name[0]}
@@ -24,12 +24,12 @@ export function AgentBadge({ id, size = 28 }: { id: AgentId; size?: number }) {
 export function speakerName(s: Speaker) {
   if (s === 'user') return 'You';
   if (s === 'system') return 'System';
-  return PROFILES[s].name;
+  return PROFILES[s]?.name ?? s;
 }
 export function speakerColor(s: Speaker) {
   if (s === 'user') return '#38bdf8';
   if (s === 'system') return '#8b93a7';
-  return PROFILES[s].color;
+  return PROFILES[s]?.color ?? '#3b82f6';
 }
 
 export function Progress({ value, color = '#7c9cff', h = 6 }: { value: number; color?: string; h?: number }) {

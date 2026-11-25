@@ -24,9 +24,15 @@ const clients = new Set();
 const services = new Map(); // id -> oxirgi Service hodisasi
 const recentLogs = []; // yangi ulangan brauzer uchun oxirgi loglar
 
+const presence = new Map();
+
 function broadcast(ev) {
   if (ev.hook === 'Service') services.set(ev.id, ev);
   if (ev.hook === 'Log') { recentLogs.push(ev); if (recentLogs.length > 40) recentLogs.shift(); }
+  if (ev.hook === 'Presence' && Array.isArray(ev.people)) {
+    presence.clear();
+    for (const p of ev.people) if (p && p.id) presence.set(p.id, { id: p.id, name: p.name, status: p.status, task: p.task, openbotId: p.openbotId });
+  }
   const data = `data: ${JSON.stringify(ev)}\n\n`;
   for (const c of clients) c.write(data);
 }
@@ -82,6 +88,30 @@ function serveStatic(req, res) {
   fs.createReadStream(file).pipe(res);
 }
 
+async function sendOpenBot(body, res) {
+  const fail = (code, error) => res.writeHead(code, { ...CORS, 'content-type': 'application/json' }).end(JSON.stringify({ error }));
+  try {
+    const parsed = JSON.parse(body || '{}');
+    const id = String(parsed.id || '').trim();
+    const text = String(parsed.text || '').trim().slice(0, 4000);
+    if (!id || !text) { fail(400, 'id ve metin gerekli.'); return; }
+    const root = path.join(process.env.APPDATA || '', 'OpenBot', 'automation');
+    const url = fs.readFileSync(path.join(root, 'url'), 'utf8').trim().replace(/\/$/, '');
+    const token = fs.readFileSync(path.join(root, 'token'), 'utf8').trim();
+    if (!url || !token) { fail(503, 'OpenBot bağlantısı yok.'); return; }
+    const r = await fetch(`${url}/v1/agents/${encodeURIComponent(id)}/messages`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+      body: JSON.stringify({ text, clientMessageId: `office:${Date.now()}` }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { fail(r.status === 401 ? 401 : 502, j.error || j.message || 'Gönderilemedi.'); return; }
+    res.writeHead(200, { ...CORS, 'content-type': 'application/json' }).end(JSON.stringify({ ok: true }));
+  } catch {
+    fail(502, 'OpenBot görevi gönderilemedi.');
+  }
+}
+
 function handler(req, res) {
   if (req.method === 'OPTIONS') { res.writeHead(204, CORS).end(); return; }
 
@@ -101,7 +131,7 @@ function handler(req, res) {
 
   if (req.url === '/events') {
     res.writeHead(200, { ...CORS, 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive' });
-    res.write(`data: ${JSON.stringify({ hook: 'Snapshot', services: [...services.values()], logs: recentLogs, project: path.basename(project), team, severity: settingsFrom(config) })}\n\n`);
+    res.write(`data: ${JSON.stringify({ hook: 'Snapshot', services: [...services.values()], logs: recentLogs, project: path.basename(project), team, severity: settingsFrom(config), presence: [...presence.values()] })}\n\n`);
     clients.add(res);
     req.on('close', () => clients.delete(res));
     return;
@@ -118,6 +148,13 @@ function handler(req, res) {
       config: config.file, services: services.size, port: listening.port, urls: listening.urls, tried: listening.tried,
       premium: premiumReady(),
     }));
+    return;
+  }
+
+  if (req.method === 'POST' && req.url === '/openbot/ask') {
+    let body = '';
+    req.on('data', (c) => { body += c; if (body.length > 16_000) req.destroy(); });
+    req.on('end', () => { void sendOpenBot(body, res); });
     return;
   }
 

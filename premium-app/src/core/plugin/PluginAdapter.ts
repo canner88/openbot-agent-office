@@ -3,10 +3,10 @@
 // events the free office shows — or a recorded session (?replay=file.json).
 // The main session is the Manager; each sub-agent's tool calls show on its own seat (see team.ts).
 import type { AdapterContext, AgentDataAdapter } from '../adapter';
-import type { AgentId, Lang, Project, Task } from '../types';
+import type { Agent, AgentId, Lang, Project, Task } from '../types';
 import { uid } from '../types';
 import { PROFILES } from '../agents';
-import { applyTeam, isVacant, seatFor, type TeamRole } from './team';
+import { applyTeam, OPENBOT, seatFor, type TeamRole } from './team';
 
 interface HookEvent {
   hook: string;
@@ -17,6 +17,8 @@ interface HookEvent {
   tool_use_id?: string;
   error?: string;
   team?: TeamRole[];
+  presence?: { id: string; name?: string; status?: string; task?: string; openbotId?: string }[];
+  people?: { id: string; name?: string; status?: string; task?: string; openbotId?: string }[];
   project?: string;
   text?: string;
   severity?: string;
@@ -70,7 +72,7 @@ export class PluginAdapter implements AgentDataAdapter {
   readonly kind = 'claude-code' as const;
   readonly label = 'Claude Code (Agent Office plugin)';
   readonly isSimulated = false;
-  readonly can = { submit: false, assign: false, pause: false, chat: false, speed: false };
+  readonly can = { submit: false, assign: true, pause: false, chat: true, speed: false };
 
   private ctx!: AdapterContext;
   private es: EventSource | null = null;
@@ -123,21 +125,58 @@ export class PluginAdapter implements AgentDataAdapter {
   }
 
   submitProject() {}
-  assignTask() {}
+  assignTask(id: AgentId, title: string) { void this.ask(id, title, 'en'); }
   pauseAgent() {}
   resumeAgent() {}
-  async ask(id: AgentId, _text: string, lang: Lang) {
+  async ask(id: AgentId, text: string, _lang: Lang) {
+    const openbotId = OPENBOT.get(id);
     const a = this.ctx.getState().agents[id];
-    const t = a.currentTaskId ? this.ctx.getState().tasks[a.currentTaskId] : null;
-    if (lang === 'uz') return t ? `Men ${a.name}. Hozir "${t.title}" ustida ishlayapman. Buyruqlar terminaldagi Claude Code’dan keladi.` : `Men ${a.name}. Hozir bo‘shman: vazifani terminaldagi Claude Code beradi.`;
-    return t ? `I'm ${a.name}. I'm working on "${t.title}" right now. My orders come from Claude Code in your terminal.` : `I'm ${a.name}. I'm free right now: Claude Code in your terminal hands out the work.`;
+    if (!openbotId) return `${a?.name ?? id} için OpenBot bağlantısı yok.`;
+    try {
+      const r = await fetch('/openbot/ask', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id: openbotId, text }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) return String(j.error || 'Gönderilemedi.');
+      return 'Gönderildi. Ajan bunu kendi sohbetinde görür.';
+    } catch {
+      return 'Ofis sunucusuna ulaşılamadı.';
+    }
+  }
+
+  private presence(list: HookEvent['presence']) {
+    if (!Array.isArray(list)) return;
+    for (const p of list) {
+      const id = seatFor(p.id);
+      if (!PROFILES[id]) continue;
+      const working = p.status === 'work' || p.status === 'wait';
+      const taskId = `live-${id}`;
+      if (p.task) {
+        this.ctx.emit({
+          type: 'task.upsert',
+          task: { id: taskId, projectId: null, title: p.task, assignee: id, status: working ? 'running' : 'completed', progress: working ? 40 : 100, dependsOn: [], effort: 0, createdAt: now(), source: 'user' },
+        });
+      }
+      const patch: Partial<Agent> = {
+        status: working ? 'working' : 'idle',
+        place: 'desk',
+        currentTaskId: p.task ? taskId : null,
+        vacant: false,
+        arrived: true,
+      };
+      if (p.name && (id !== 'manager' || p.id === 'director')) patch.name = p.name;
+      this.patch(id, patch);
+    }
   }
 
   private team(team: TeamRole[]) {
     const seats = applyTeam(team);
+    this.ctx.emit({ type: 'roster' });
     for (const id of seats) {
       const p = PROFILES[id];
-      this.ctx.emit({ type: 'agent.patch', id, patch: { name: p.name, role: p.role, color: p.color, bio: p.bio, vacant: isVacant(id) } });
+      this.ctx.emit({ type: 'agent.patch', id, patch: { name: p.name, role: p.role, color: p.color, bio: p.bio, vacant: false, place: 'desk' } });
     }
     this.onTeam?.();
   }
@@ -145,8 +184,9 @@ export class PluginAdapter implements AgentDataAdapter {
   /** a sub-agent the team file did not list just got a seat: show it */
   private fill(seat: AgentId) {
     const a = this.ctx.getState().agents[seat];
-    if (!a.vacant) return;
+    if (a && !a.vacant) return;
     const p = PROFILES[seat];
+    if (!p) return;
     this.patch(seat, { name: p.name, role: p.role, color: p.color, bio: p.bio, vacant: false });
     this.onTeam?.();
   }
@@ -154,11 +194,11 @@ export class PluginAdapter implements AgentDataAdapter {
   private log(agentId: AgentId, kind: 'action' | 'task' | 'result' | 'status' | 'error', text: string) {
     this.ctx.emit({ type: 'log', entry: { id: uid('log'), ts: now(), agentId, kind, text } });
   }
-  private patch(id: AgentId, patch: Record<string, unknown>) { this.ctx.emit({ type: 'agent.patch', id, patch }); }
+  private patch(id: AgentId, patch: Partial<Agent>) { this.ctx.emit({ type: 'agent.patch', id, patch }); }
   private say(from: AgentId, text: string, to: AgentId | 'all' | 'user' = 'all') {
     this.ctx.emit({ type: 'message', message: { id: uid('msg'), ts: now(), from, to, text, channel: 'team' } });
   }
-  private settle(id: AgentId, ms: number, patch: Record<string, unknown>) {
+  private settle(id: AgentId, ms: number, patch: Partial<Agent>) {
     const token = {};
     this.calm.set(id, token);
     after(ms, () => { if (this.calm.get(id) === token) this.patch(id, patch); });
@@ -188,6 +228,10 @@ export class PluginAdapter implements AgentDataAdapter {
       case 'Snapshot':
       case 'Team':
         if (Array.isArray(ev.team)) this.team(ev.team);
+        if (ev.hook === 'Snapshot') this.presence(ev.presence);
+        return;
+      case 'Presence':
+        this.presence(ev.people);
         return;
       case 'SessionStart':
         this.patch('manager', { status: 'idle', place: 'desk' });

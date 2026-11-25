@@ -1,8 +1,11 @@
 // Domain model shared by the store, the adapters and the 3D world.
 // Nothing here knows about React or Three.js.
 
-export type AgentId = 'manager' | 'research' | 'developer' | 'designer' | 'qa';
+export type AgentId = string;
 export const AGENT_IDS: AgentId[] = ['manager', 'research', 'developer', 'designer', 'qa'];
+export function setAgentIds(ids: AgentId[]) {
+  AGENT_IDS.splice(0, AGENT_IDS.length, ...ids);
+}
 
 export type AgentStatus = 'idle' | 'thinking' | 'working' | 'completed' | 'error' | 'paused';
 
@@ -99,6 +102,7 @@ export type OfficeEvent =
   | { type: 'project.upsert'; project: Project }
   | { type: 'message'; message: Message }
   | { type: 'log'; entry: LogEntry }
+  | { type: 'roster' }
   | { type: 'reset' };
 
 let seq = 0;

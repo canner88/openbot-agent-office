@@ -40,6 +40,7 @@ interface OfficeState extends OfficeSnapshot {
   hint: string | null;
   voiceOn: boolean;
   dashboardOpen: boolean;
+  roster: number;
 
   dispatch(ev: OfficeEvent): void;
   setSource(kind: SourceKind): void;
@@ -125,14 +126,20 @@ export const useOffice = create<OfficeState>((set, get) => {
     hint: null,
     voiceOn: false,
     dashboardOpen: true,
+    roster: 0,
 
     dispatch(ev) {
       set((s) => {
         switch (ev.type) {
           case 'reset':
             return { ...blank() };
+          case 'roster':
+            return { roster: s.roster + 1 };
           case 'agent.patch': {
-            const prev = s.agents[ev.id];
+            const prev = s.agents[ev.id] ?? {
+              id: ev.id, name: ev.id, role: '', color: '#3b82f6', bio: '',
+              status: 'idle' as const, currentTaskId: null, place: 'desk' as const, speaking: false, arrived: true, vacant: false,
+            };
             const next: Agent = { ...prev, ...ev.patch };
             return { agents: { ...s.agents, [ev.id]: next } };
           }

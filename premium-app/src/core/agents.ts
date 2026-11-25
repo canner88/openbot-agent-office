@@ -1,6 +1,6 @@
 import type { Agent, AgentId, AgentProfile } from './types';
 
-export const PROFILES: Record<AgentId, AgentProfile> = {
+export const PROFILES: Record<string, AgentProfile> = {
   manager: {
     id: 'manager',
     name: 'Olivia',

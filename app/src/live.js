@@ -1,6 +1,6 @@
 // Live rejim: Claude Code hook'lari, Docker, terminal va log fayllardan kelgan hodisalarni
 // agent harakatiga aylantiradi.
-import { useOffice } from './store.js';
+import { useOffice, positions } from './store.js';
 import { fromLegacy, isLevel, severityOf } from './severity.js';
 import { tr } from './i18n.js';
 import { personName } from './crew.js';
@@ -47,19 +47,48 @@ function describe(tool, input = {}) {
 
 // Plugin agentlari "agent-office:backend" ko'rinishida keladi — ofisda "backend"
 const norm = (n) => (n ? String(n).split(':').pop() : n);
+const seatOf = (n) => {
+  const id = norm(n);
+  if (!id) return id;
+  if (id === 'main' || id === 'director') return 'manager';
+  return id;
+};
+
+function applyPresence(list) {
+  if (!Array.isArray(list)) return;
+  for (const p of list) {
+    const id = seatOf(p.id);
+    if (!id) continue;
+    if (id !== 'manager') S().ensureAgent(id);
+    const a = S().agents[id];
+    if (!a) continue;
+    if (p.name && (id !== 'manager' || p.id === 'director')) S().patch(id, { name: p.name });
+    const working = p.status === 'work' || p.status === 'wait';
+    const task = p.task || '';
+    if (working) {
+      const d = S().layout.desks[a.deskId];
+      if (d && positions[id]) { positions[id].x = d.seat[0]; positions[id].z = d.seat[1]; positions[id].rot = Math.PI; }
+      S().patch(id, { state: 'working', task: task || a.task, path: [], after: null });
+    } else if (a.state === 'working') {
+      S().patch(id, { state: 'idle', task: '', path: [], after: null });
+    }
+  }
+}
 
 let running = []; // ishga tushgan sub-agentlar (agent_type kelmasa zaxira)
 // a background sub-agent always sends agent_type; the fallback is only for foreground ones
-const actorOf = (e) => { const fg = running.filter((r) => !r.async); return norm(e.agent_type) || (fg.length ? fg[fg.length - 1].agent : 'manager'); };
+const actorOf = (e) => { const fg = running.filter((r) => !r.async); return seatOf(e.agent_type) || (fg.length ? fg[fg.length - 1].agent : 'manager'); };
 
 function startSub(agent, task) {
+  const id = seatOf(agent);
   const s = S();
-  s.ensureAgent(agent);
-  const a = S().agents[agent];
+  s.ensureAgent(id);
+  const a = S().agents[id];
+  if (!a) return;
   if (a.state === 'working' || (a.state === 'walking' && a.after?.state === 'working')) return;
-  S().patch(agent, { task });
-  S().goToDesk(agent, { state: 'working' });
-  S().log(agent, tr('Took a task: {task}', { task }));
+  S().patch(id, { task });
+  S().goToDesk(id, { state: 'working' });
+  S().log(id, tr('Took a task: {task}', { task }));
 }
 
 function finishSub(agent) {
@@ -90,13 +119,15 @@ export function handleEvent(e) {
       if (e.severity) s.setServerSeverity(e.severity);
       if (e.project) useOffice.setState({ project: e.project });
       if (Array.isArray(e.team)) s.setTeam(e.team, { replace: true });
+      applyPresence(e.presence);
       for (const sv of e.services || []) s.setService(sv);
       for (const l of (e.logs || []).slice(-15)) S().ensureAgent(l.agent) && S().log(l.agent, l.text, l.level, l.source);
       break;
     }
+    case 'Presence': applyPresence(e.people); break;
     case 'Service': s.setService(e); break;
     case 'Log': {
-      const id = norm(e.agent) || 'devops';
+      const id = seatOf(e.agent) || 'devops';
       s.ensureAgent(id);
       // yangi server `severity` yuboradi; eskisi faqat `level`
       const sev = isLevel(e.severity) ? e.severity : fromLegacy(e.level);
@@ -128,16 +159,18 @@ export function handleEvent(e) {
       break;
     }
     case 'SubagentStart': {
-      if (e.agent_type) startSub(norm(e.agent_type), S().agents[norm(e.agent_type)]?.task || tr('Task'));
+      if (e.agent_type) startSub(seatOf(e.agent_type), S().agents[seatOf(e.agent_type)]?.task || tr('Task'));
       break;
     }
     case 'PreToolUse': {
       if (SPAWN_TOOLS.has(tool)) {
-        const agent = norm(input.subagent_type) || 'general-purpose';
+        const agent = seatOf(input.subagent_type) || 'general-purpose';
         running.push({ id: e.tool_use_id, agent });
         const task = short(input.description || input.prompt, 50) || tr('Task');
-        s.say(norm(e.agent_type) || 'manager', `${personName(agent)}, ${task}`, 4000);
-        s.log(norm(e.agent_type) || 'manager', tr('→ handed to {agent}: {task}', { agent: personName(agent), task }));
+        const who = seatOf(e.agent_type) || 'manager';
+        const called = S().agents[agent]?.name || personName(agent);
+        s.say(who, `${called}, ${task}`, 4000);
+        s.log(who, tr('→ handed to {agent}: {task}', { agent: called, task }));
         startSub(agent, task);
         break;
       }
@@ -161,7 +194,7 @@ export function handleEvent(e) {
         }
         const r = idx >= 0 ? running.splice(idx, 1)[0] : running.pop();
         if (r) finishSub(r.agent);
-        s.setState(norm(e.agent_type) || 'manager', 'thinking');
+        s.setState(seatOf(e.agent_type) || 'manager', 'thinking');
       } else if (e.stderr) {
         const who = actorOf(e);
         const sev = isLevel(e.stderr_severity) ? e.stderr_severity : fromLegacy(e.stderr_level ?? 'warn');
@@ -183,7 +216,7 @@ export function handleEvent(e) {
       break;
     }
     case 'SubagentStop': {
-      const who = norm(e.agent_type) || running[running.length - 1]?.agent;
+      const who = seatOf(e.agent_type) || running[running.length - 1]?.agent;
       // a background sub-agent finishes here (a foreground one finishes at its PostToolUse)
       const idx = running.findIndex((r) => r.async && r.agent === who);
       if (idx >= 0) { running.splice(idx, 1); finishSub(who); }

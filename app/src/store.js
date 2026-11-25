@@ -26,13 +26,29 @@ export const normTeam = (team) => team.map((r, i) => {
   return { ...r, kind, name: r.name || prettyName(r.id), color: r.color || KIND_COLOR[kind] || EXTRA[i % EXTRA.length] };
 });
 
+const isBoss = (r) => r && (r.id === 'director' || /^director$/i.test(r.name || ''));
+
+function paintBoss(layout, agents, boss) {
+  if (!boss) return { layout, agents };
+  const rooms = layout.rooms.map((r) => (r.id === 'manager' ? { ...r, name: boss.name || r.name } : r));
+  const manager = agents.manager ? {
+    ...agents.manager,
+    name: boss.name || agents.manager.name,
+    title: boss.role || boss.name || agents.manager.title,
+    role: boss.role || 'Director',
+    openbotId: boss.openbotId || agents.manager.openbotId,
+  } : agents.manager;
+  return { layout: { ...layout, rooms }, agents: { ...agents, manager } };
+}
+
 function makeAgent(def, L, index, inLounge) {
   const deskId = def.id === 'manager' ? 'manager' : (L.desks[def.id] ? def.id : null);
   const spots = L.lounge.spots;
   const start = def.spawn ?? (inLounge && def.id !== 'manager' ? spots[index % spots.length] : L.desks[deskId]?.seat ?? spots[0]);
   positions[def.id] = { x: start[0], z: start[1], rot: Math.PI };
   return {
-    id: def.id, name: personName(def.id), title: def.name, role: def.role ?? def.kind, color: def.color, kind: def.kind,
+    id: def.id, name: def.name || personName(def.id), title: def.role || def.name, role: def.role ?? def.kind, color: def.color, kind: def.kind,
+    openbotId: def.openbotId || null,
     deskId, index,
     state: inLounge && def.id !== 'manager' ? 'idle' : 'working',
     task: inLounge ? '' : tr('Starting work'),
@@ -53,12 +69,13 @@ const initialTeam = normTeam(DEFAULT_TEAM);
 const initialLayout = buildLayout(initialTeam);
 
 export const useOffice = create((set, get) => ({
-  mode: 'sim',
+  mode: 'live',
   conn: 'off',
   selected: null,
   team: initialTeam,
+  director: null,
   layout: initialLayout,
-  agents: agentsFor(initialTeam, initialLayout, false),
+  agents: agentsFor(initialTeam, initialLayout, true),
   feed: [],
   services: {},
   project: '',
@@ -92,7 +109,8 @@ export const useOffice = create((set, get) => ({
 
   setMode: (mode) => {
     const L = get().layout;
-    set({ mode, agents: agentsFor(get().team, L, mode === 'live'), feed: [], services: {}, issues: {}, selected: null });
+    const painted = paintBoss(L, agentsFor(get().team, L, mode === 'live'), get().director);
+    set({ mode, ...painted, feed: [], services: {}, issues: {}, selected: null });
   },
   setConn: (conn) => set({ conn }),
   setThemeMode: (themeMode) => set({ themeMode, timeOffsetH: 0 }),
@@ -106,19 +124,25 @@ export const useOffice = create((set, get) => ({
 
   // Jamoa o'zgardi (server, sozlama yoki yangi agent paydo bo'ldi): faqat qo'shamiz
   setTeam: (incoming, { spawnAtEntrance = true, replace = false } = {}) => {
+    const boss = incoming.find(isBoss) || null;
+    const rest = incoming.filter((r) => r !== boss && r.id !== 'manager');
     if (replace) {
-      // birinchi yuklash: jamoa aynan loyihadagidek bo'ladi (standart rollar olib tashlanadi)
-      const team = normTeam(incoming.filter((r) => r.id !== 'manager'));
+      const team = normTeam(rest);
       const same = team.map((r) => r.id).join() === get().team.map((r) => r.id).join();
-      if (same) { set({ team: get().team.map((c) => ({ ...c, ...team.find((t) => t.id === c.id) })) }); return; }
+      if (same) {
+        const agents = { ...get().agents };
+        for (const r of team) if (agents[r.id]) agents[r.id] = { ...agents[r.id], name: r.name, title: r.role || r.name, color: r.color, kind: r.kind, openbotId: r.openbotId || agents[r.id].openbotId };
+        set({ team: get().team.map((c) => ({ ...c, ...team.find((t) => t.id === c.id) })), director: boss, ...paintBoss(get().layout, agents, boss) });
+        return;
+      }
       const L = buildLayout(team);
-      set({ team, layout: L, agents: agentsFor(team, L, get().mode === 'live'), services: {}, issues: {}, selected: null });
+      set({ team, director: boss, ...paintBoss(L, agentsFor(team, L, get().mode === 'live'), boss), services: {}, issues: {}, selected: null });
       return;
     }
     const cur = get().team;
-    const add = normTeam(incoming.filter((r) => r.id !== 'manager' && !cur.some((c) => c.id === r.id)));
-    const updated = cur.map((c) => { const n = incoming.find((r) => r.id === c.id); return n ? { ...c, ...normTeam([n])[0] } : c; });
-    if (!add.length && JSON.stringify(updated) === JSON.stringify(cur)) return;
+    const add = normTeam(rest.filter((r) => !cur.some((c) => c.id === r.id)));
+    const updated = cur.map((c) => { const n = rest.find((r) => r.id === c.id); return n ? { ...c, ...normTeam([n])[0] } : c; });
+    if (!add.length && JSON.stringify(updated) === JSON.stringify(cur) && !boss) return;
     const team = [...updated, ...add];
     const L = buildLayout(team);
     const agents = { ...get().agents };
@@ -126,12 +150,11 @@ export const useOffice = create((set, get) => ({
     for (const r of add) {
       agents[r.id] = makeAgent({ ...r, spawn: spawnAtEntrance ? [1, 10 + (n % 2)] : undefined }, L, n++, true);
     }
-    // nomi/rangi yangilanganlar
-    for (const r of updated) if (agents[r.id]) agents[r.id] = { ...agents[r.id], name: r.name, color: r.color, kind: r.kind, deskId: L.desks[r.id] ? r.id : agents[r.id].deskId };
-    set({ team, layout: L, agents });
+    for (const r of updated) if (agents[r.id]) agents[r.id] = { ...agents[r.id], name: r.name, title: r.role || r.name, color: r.color, kind: r.kind, openbotId: r.openbotId || agents[r.id].openbotId, deskId: L.desks[r.id] ? r.id : agents[r.id].deskId };
+    set({ team, director: boss || get().director, ...paintBoss(L, agents, boss || get().director) });
     // yangi xodimlar eshikdan kirib, o'z xonasiga boradi
     for (const r of add) {
-      get().say(r.id, tr("Hi! I'm {name} 👋", { name: personName(r.id) }), 3500, 'ok');
+      get().say(r.id, tr("Hi! I'm {name} 👋", { name: r.name }), 3500, 'ok');
       get().log(r.id, tr('Joined the team: {name}', { name: r.name }));
       setTimeout(() => get().goToDesk(r.id, { state: 'idle' }), 600);
     }

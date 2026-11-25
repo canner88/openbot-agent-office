@@ -10,6 +10,14 @@ export const agentBodies = Object.fromEntries(AGENT_IDS.map((id) => {
   return [id, { x: s.x, z: s.z, rot: s.rot }];
 })) as Record<AgentId, Body>;
 
+export function ensureBody(id: string): Body {
+  const s = deskSeat(id);
+  const have = agentBodies[id];
+  if (have) { have.x = s.x; have.z = s.z; have.rot = s.rot; return have; }
+  agentBodies[id] = { x: s.x, z: s.z, rot: s.rot };
+  return agentBodies[id];
+}
+
 export const player = {
   x: PLAYER_SPAWN.x,
   y: 0,

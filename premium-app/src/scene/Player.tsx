@@ -193,10 +193,12 @@ export function Player() {
       hintTick.current = 0;
       let best: { kind: 'agent' | 'object'; id: string; d: number; label: string } | null = null;
       for (const id of AGENT_IDS) {
-        if (useOffice.getState().agents[id].vacant) continue;
+        const agent = useOffice.getState().agents[id];
         const b = agentBodies[id];
+        if (!agent || agent.vacant || !b) continue;
         const d = Math.hypot(b.x - player.x, b.z - player.z);
-        if (d < 2.1 && (!best || d < best.d)) best = { kind: 'agent', id, d, label: `Press E to talk to ${PROFILES[id].name} (${PROFILES[id].role})` };
+        const who = PROFILES[id];
+        if (d < 2.1 && (!best || d < best.d)) best = { kind: 'agent', id, d, label: `E ile ${who?.name ?? id} ile konuş` };
       }
       for (const o of INTERACTABLES) {
         const d = Math.hypot(o.x - player.x, o.z - player.z);

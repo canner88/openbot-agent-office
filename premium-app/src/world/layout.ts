@@ -163,7 +163,7 @@ export const DESK_SIZE = { w: 1.92, d: 0.89 };
 export const CUBICLE = { w: 2.0, back: -0.5, front: 0.5 };
 const CUBE_X = [6.5, 8.5, 10.5, 12.5, 14.5];
 const CUBE_Z = [1.6, 6.2, 10.8];
-export const DESKS: Record<AgentId, { x: number; z: number }> = {
+export const DESKS: Record<string, { x: number; z: number }> = {
   research: { x: 8.5, z: 6.2 },
   developer: { x: 10.5, z: 6.2 },
   designer: { x: 8.5, z: 10.8 },
@@ -172,13 +172,37 @@ export const DESKS: Record<AgentId, { x: number; z: number }> = {
 };
 const isAgentDesk = (x: number, z: number) => Object.values(DESKS).some((d) => d.x === x && d.z === z);
 export const CUBICLE_DESKS = CUBE_Z.flatMap((z) => CUBE_X.map((x) => ({ x, z })));
-/** Cubicles of the rest of the staff (not agents). */
-export const STAFF_DESKS = CUBICLE_DESKS.filter((d) => !isAgentDesk(d.x, d.z));
+/** Cubicles of the rest of the staff (not agents). Rebuilt when the live team takes desks. */
+export let STAFF_DESKS = CUBICLE_DESKS.filter((d) => !isAgentDesk(d.x, d.z));
+const DESK_POOL = [...CUBICLE_DESKS, ...[
+  { x: 23.08, z: -11.2 }, { x: 25.0, z: -11.2 }, { x: 26.92, z: -11.2 },
+  { x: 23.08, z: -8.3 }, { x: 25.0, z: -8.3 }, { x: 26.92, z: -8.3 },
+], { x: 16.5, z: 6.2 }, { x: 16.5, z: 10.8 }];
+const extraObstacles = new Set<string>();
+/** One desk per OpenBot agent. The manager desk stays the corner office. */
+export function assignDesks(ids: string[]) {
+  for (const key of Object.keys(DESKS)) if (key !== 'manager') delete DESKS[key];
+  ids.forEach((id, i) => {
+    DESKS[id] = DESK_POOL[i] ?? { x: 4.5 + (i % 7) * 2, z: 13.4 };
+  });
+  const taken = new Set(Object.values(DESKS).map((d) => `${d.x},${d.z}`));
+  STAFF_DESKS = CUBICLE_DESKS.filter((d) => !taken.has(`${d.x},${d.z}`));
+  const built = new Set([...CUBICLE_DESKS, ...SOC_DESKS, DESKS.manager].map((d) => `${d.x},${d.z}`));
+  for (const d of Object.values(DESKS)) {
+    const k = `${d.x},${d.z}`;
+    if (built.has(k) || extraObstacles.has(k)) continue;
+    OBSTACLES.push(box(d.x, d.z, DESK_SIZE.w, DESK_SIZE.d));
+    extraObstacles.add(k);
+  }
+}
 /** The manager's desk is turned round so she faces her door; everyone else sits on the +z side facing -z. */
-export const DESK_ROT: Partial<Record<AgentId, number>> = { manager: Math.PI };
-export const deskSeat = (id: AgentId): Spot => (DESK_ROT[id]
-  ? { x: DESKS[id].x, z: DESKS[id].z - 0.82, rot: 0 }
-  : { x: DESKS[id].x, z: DESKS[id].z + 0.82, rot: Math.PI });
+export const DESK_ROT: Partial<Record<string, number>> = { manager: Math.PI };
+export const deskSeat = (id: AgentId): Spot => {
+  const d = DESKS[id] ?? DESKS.manager;
+  return DESK_ROT[id]
+    ? { x: d.x, z: d.z - 0.82, rot: 0 }
+    : { x: d.x, z: d.z + 0.82, rot: Math.PI };
+};
 
 // ------------------------------------------------------------------ meeting room
 export const MEETING_TABLE = { x: -15, z: -10.3, w: 4.06, d: 2.22 };
@@ -373,7 +397,7 @@ export const OBSTACLES: Box[] = [
 ];
 
 export function visitSpot(of: AgentId): Spot {
-  const d = DESKS[of];
+  const d = DESKS[of] ?? DESKS.manager;
   return of === 'manager' ? { x: d.x + 0.35, z: d.z + 1.25, rot: Math.PI } : { x: d.x + 0.55, z: d.z + 1.35, rot: Math.PI };
 }
 

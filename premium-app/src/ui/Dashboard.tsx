@@ -35,12 +35,13 @@ function TaskInput() {
 }
 
 function Stats() {
+  useOffice((s) => s.roster);
   const agents = useOffice((s) => s.agents);
   const tasks = useOffice((s) => s.tasks);
   const project = useOffice(selectProject);
   const list = Object.values(tasks);
-  const active = AGENT_IDS.filter((id) => !agents[id].vacant && ['working', 'thinking', 'error'].includes(agents[id].status)).length;
-  const staffed = AGENT_IDS.filter((id) => !agents[id].vacant).length;
+  const active = AGENT_IDS.filter((id) => agents[id] && !agents[id].vacant && ['working', 'thinking', 'error'].includes(agents[id].status)).length;
+  const staffed = AGENT_IDS.filter((id) => agents[id] && !agents[id].vacant).length;
   const running = list.filter((t) => t.status === 'running').length;
   const completed = list.filter((t) => t.status === 'completed').length;
   const pct = Math.round(project?.progress ?? 0);
@@ -70,6 +71,7 @@ function Stats() {
 }
 
 function AgentActivity() {
+  useOffice((s) => s.roster);
   const agents = useOffice((s) => s.agents);
   const tasks = useOffice((s) => s.tasks);
   const select = useOffice((s) => s.select);
@@ -77,7 +79,7 @@ function AgentActivity() {
   return (
     <Section title="Agent Activity">
       <div className="flex flex-col gap-1">
-        {AGENT_IDS.filter((id) => !agents[id].vacant).map((id) => {
+        {AGENT_IDS.filter((id) => agents[id] && !agents[id].vacant).map((id) => {
           const a = agents[id];
           const t = a.currentTaskId ? tasks[a.currentTaskId] : undefined;
           return (
@@ -86,7 +88,7 @@ function AgentActivity() {
               <AgentBadge id={id} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="truncate text-[13px] font-semibold">{a.name} <span className="font-normal text-muted">· {PROFILES[id].role.replace(' Agent', '')}</span></span>
+                  <span className="truncate text-[13px] font-semibold">{a.name} <span className="font-normal text-muted">· {(PROFILES[id]?.role || a.role || '').replace(' Agent', '')}</span></span>
                   <StatusPill status={a.status} />
                 </div>
                 <div className="mt-1 flex items-center gap-2">

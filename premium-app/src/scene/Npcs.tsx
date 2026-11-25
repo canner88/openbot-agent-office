@@ -1,14 +1,15 @@
 // The rest of the staff: people who work in the office but are not agents.
 // They sit at their cubicles, chat in the kitchen and the lounge, and a few walk around.
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { SyntyAvatar, type Wearable } from './SyntyAvatar';
 import type { Gesture, Pose, PoseMode } from './Avatar';
 import type { Palette } from './assets';
-import { STAFF_DESKS, RECEPTION, LOBBY_SOFA, KITCHEN_ISLAND, POOL_TABLES, FOOSBALL, SOFA, BEANBAGS, TABLE_TENNIS, SOC_DESKS, type Spot } from '../world/layout';
+import { DESKS, STAFF_DESKS, RECEPTION, LOBBY_SOFA, KITCHEN_ISLAND, POOL_TABLES, FOOSBALL, SOFA, BEANBAGS, TABLE_TENNIS, SOC_DESKS, type Spot } from '../world/layout';
 import { findPath, type P } from '../world/nav';
 import { walkers } from '../world/runtime';
+import { useOffice } from '../store/useOffice';
 
 interface Still { kind: 'still'; model: string; palette?: Palette; at: Spot; mode: PoseMode; talking?: boolean; gesture?: Gesture; wear?: Wearable[] }
 interface Walker { kind: 'walk'; model: string; palette?: Palette; wear?: Wearable[]; stops: { at: Spot; wait: number; gesture?: Gesture; talking?: boolean }[] }
@@ -21,20 +22,26 @@ const DESK_STAFF: [string, Palette][] = [
   ['SK_Chr_Business_Female_03', '01'], ['SK_Chr_Business_Female_04', '02'], ['SK_Chr_Business_Male_01', '04'],
   ['SK_Chr_Developer_Male_02', '03'], ['SK_Chr_Business_Female_01', '04'], ['SK_Chr_Boss_Male_01', '02'],
 ];
-const atDesks: Npc[] = STAFF_DESKS
-  .filter((_, i) => i % 4 !== 3) // the 4th, 8th… cubicles are empty (see Workspace)
-  .map((d, i) => ({ kind: 'still', model: DESK_STAFF[i % DESK_STAFF.length][0], palette: DESK_STAFF[i % DESK_STAFF.length][1], at: seat(d), mode: 'type', wear: ([['Identity'], ['Pens'], [], ['Identity', 'Pens']] as Wearable[][])[i % 4] }));
+function atDesks(): Npc[] {
+  return STAFF_DESKS
+    .filter((_, i) => i % 4 !== 3)
+    .map((d, i) => ({ kind: 'still' as const, model: DESK_STAFF[i % DESK_STAFF.length][0], palette: DESK_STAFF[i % DESK_STAFF.length][1], at: seat(d), mode: 'type' as const, wear: ([['Identity'], ['Pens'], [], ['Identity', 'Pens']] as Wearable[][])[i % 4] }));
+}
 
 /** Cyber Security analysts: front row and the back row's west console (the back middle one is free, the east one's owner walks about). */
 const SOC_STAFF: [number, string, Palette][] = [
   [0, 'SK_Chr_Developer_Female_02', '02'], [1, 'SK_Chr_Business_Male_03', '04'], [2, 'SK_Chr_Developer_Male_02', '03'], [3, 'SK_Chr_Business_Female_04', '03'],
 ];
 // No wearables here: each one is a draw call of its own (the headsets lie on the desks instead).
-const atSoc: Npc[] = SOC_STAFF.map(([desk, model, palette]) => ({ kind: 'still', model, palette, at: seat(SOC_DESKS[desk]), mode: 'type' }));
+function atSoc(): Npc[] {
+  const taken = new Set(Object.values(DESKS).map((d) => `${d.x},${d.z}`));
+  return SOC_STAFF
+    .filter(([desk]) => { const d = SOC_DESKS[desk]; return !!d && !taken.has(`${d.x},${d.z}`); })
+    .map(([desk, model, palette]) => ({ kind: 'still' as const, model, palette, at: seat(SOC_DESKS[desk]), mode: 'type' as const }));
+}
 
 const P0 = POOL_TABLES[0];
 const STAFF: Npc[] = [
-  ...atDesks,
   // reception
   { kind: 'still', model: 'SK_Chr_Business_Female_02', at: { x: RECEPTION.x + 0.3, z: RECEPTION.z - 0.7, rot: 0 }, mode: 'type', wear: ['Earpiece', 'Nametag'] },
   { kind: 'still', model: 'SK_Chr_Business_Male_04', palette: '02', at: { x: LOBBY_SOFA.x + 0.3, z: LOBBY_SOFA.z - 0.5, rot: Math.PI / 2 }, mode: 'sit' },
@@ -76,7 +83,7 @@ const STAFF: Npc[] = [
   // server room and corridor
   { kind: 'still', model: 'SK_Chr_Security_Female_01', at: { x: 7.4, z: -11.0, rot: 0 }, mode: 'stand' },
   // cyber security: the shift lead briefs the analysts in front of the video wall; one analyst checks the racks and the server room
-  ...atSoc,
+
   { kind: 'still', model: 'SK_Chr_Boss_Male_01', palette: '04', at: { x: 22.2, z: -12.7, rot: 0.55 }, mode: 'stand', talking: true },
   {
     kind: 'walk', model: 'SK_Chr_Business_Female_01', palette: '02', stops: [
@@ -180,9 +187,11 @@ function WalkingNpc({ npc }: { npc: Walker }) {
 }
 
 export function Npcs() {
+  const roster = useOffice((s) => s.roster);
+  const list = useMemo(() => [...atDesks(), ...atSoc(), ...STAFF], [roster]);
   return (
     <>
-      {STAFF.map((n, i) => (n.kind === 'still' ? <StillNpc key={i} npc={n} /> : <WalkingNpc key={i} npc={n} />))}
+      {list.map((n, i) => (n.kind === 'still' ? <StillNpc key={i} npc={n} /> : <WalkingNpc key={i} npc={n} />))}
     </>
   );
 }

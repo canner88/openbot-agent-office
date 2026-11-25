@@ -289,5 +289,5 @@ const APPS: Record<AgentId, (ctx: CanvasRenderingContext2D, w: number, h: number
 export function drawScreen(ctx: CanvasRenderingContext2D, w: number, h: number, s: ScreenState) {
   ctx.clearRect(0, 0, w, h);
   if (s.agent.place !== 'desk' || s.agent.status === 'paused') return locked(ctx, w, h, s);
-  APPS[s.agent.id](ctx, w, h, s);
+  (APPS[s.agent.id] ?? developer)(ctx, w, h, s);
 }
