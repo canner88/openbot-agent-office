@@ -30,16 +30,16 @@ PROP_SOURCES = [
     (r"^SM_Prop_Desk_0[123]$", vnb("Desk.obj"), (1.6, 0.75, 0.8)),
     (r"^SM_Prop_Desk_0[456]$", k("desk.glb"), (1.6, 0.75, 0.8)),
     (r"^SM_Prop_Chair_BeanBag", k("loungeChairRelax.glb"), (0.85, 0.65, 0.85)),
-    (r"^SM_Prop_Chair_0[1-5]$", k("chairDesk.glb"), (0.6, 0.92, 0.6)),
-    (r"^SM_Prop_Chair_0[6-9]$", k("chairCushion.glb"), (0.58, 0.9, 0.58)),
+    (r"^SM_Prop_Chair_0[1-5]$", k("chairDesk.glb"), (0.60, 0.90, 0.60)),
+    (r"^SM_Prop_Chair_0[6-9]$", k("chairCushion.glb"), (0.58, 0.90, 0.58)),
     (r"^SM_Prop_Chair_1[01]$", k("chairModernCushion.glb"), (0.58, 0.88, 0.58)),
-    (r"^SM_Prop_Couch_0[123]$", k("loungeSofa.glb"), (1.9, 0.82, 0.85)),
-    (r"^SM_Prop_Couch_0[456]$", k("loungeDesignSofa.glb"), (1.9, 0.82, 0.85)),
-    (r"^SM_Prop_Benchseat|^SM_Prop_Outdoor_Seat", k("benchCushion.glb"), (1.4, 0.55, 0.5)),
-    (r"^SM_Prop_Computer_Monitor_Double|^SM_Prop_Computer_Monitor_Triple|^SM_Prop_Computer_Monitor_Curved", k("computerScreen.glb"), (0.95, 0.48, 0.22)),
-    (r"^SM_Prop_Computer_Monitor_", k("computerScreen.glb"), (0.62, 0.46, 0.20)),
-    (r"^SM_Prop_Monitor_Crt", k("computerScreen.glb"), (0.5, 0.45, 0.4)),
-    (r"^SM_Prop_TV_Wall|^SM_Prop_Rolling_TV", k("televisionModern.glb"), (1.3, 0.78, 0.14)),
+    (r"^SM_Prop_Couch_0[123]$", k("loungeSofa.glb"), (1.90, 0.82, 0.85)),
+    (r"^SM_Prop_Couch_0[456]$", k("loungeDesignSofa.glb"), (1.90, 0.82, 0.85)),
+    (r"^SM_Prop_Benchseat|^SM_Prop_Outdoor_Seat", k("benchCushion.glb"), (1.40, 0.52, 0.50)),
+    (r"^SM_Prop_Computer_Monitor_Double|^SM_Prop_Computer_Monitor_Triple|^SM_Prop_Computer_Monitor_Curved", k("computerScreen.glb"), (0.95, 0.48, 0.20)),
+    (r"^SM_Prop_Computer_Monitor_", k("computerScreen.glb"), (0.62, 0.46, 0.18)),
+    (r"^SM_Prop_Monitor_Crt", k("computerScreen.glb"), (0.50, 0.45, 0.38)),
+    (r"^SM_Prop_TV_Wall|^SM_Prop_Rolling_TV", k("televisionModern.glb"), (1.35, 0.80, 0.12)),
     (r"^SM_Prop_Laptop", k("laptop.glb"), (0.36, 0.26, 0.28)),
     (r"^SM_Prop_Computer_Keyboard_", k("computerKeyboard.glb"), (0.44, 0.05, 0.16)),
     (r"^SM_Prop_Computer_Mouse_", k("computerMouse.glb"), (0.08, 0.04, 0.12)),
@@ -63,7 +63,8 @@ PROP_SOURCES = [
     (r"^SM_Prop_CoffeeMachine", k("kitchenCoffeeMachine.glb"), (0.28, 0.36, 0.28)),
     (r"^SM_Prop_Microwave", k("kitchenMicrowave.glb"), (0.48, 0.30, 0.35)),
     (r"^SM_Prop_Toaster", k("toaster.glb"), (0.26, 0.20, 0.18)),
-    (r"^SM_Prop_Plant_0[1-7]$|^SM_Prop_Tree_Round", k("pottedPlant.glb"), (0.5, 1.1, 0.5)),
+    (r"^SM_Prop_Plant_0[1-7]$", k("pottedPlant.glb"), (0.55, 1.15, 0.55)),
+    (r"^SM_Prop_Tree_Round", k("pottedPlant.glb"), (1.50, 2.60, 1.50)),
     (r"^SM_Prop_Plant_0[89]$|^SM_Prop_Plant_1[0-4]$|^SM_Prop_Plant_Flowers|^SM_Prop_Flowers", k("plantSmall1.glb"), (0.35, 0.45, 0.35)),
     (r"^SM_Prop_Desklamp_0[12]|^SM_Prop_DeskLamp_0[56]", op("lamp_architect.glb"), (0.22, 0.48, 0.22)),
     (r"^SM_Prop_Desklamp|^SM_Prop_DeskLamp", op("lamp.glb"), (0.20, 0.40, 0.20)),
@@ -91,6 +92,44 @@ PROP_SOURCES = [
     (r"^SM_Prop_Bathroom_Sink|^SM_Prop_Sink_01", k("bathroomSink.glb"), (0.6, 0.85, 0.5)),
     (r"^SM_Prop_Bathroom_Mirror", k("bathroomMirror.glb"), (0.65, 0.8, 0.05)),
     (r"^SM_Prop_Aircon", dt("Prop_ACUnit.gltf"), (0.85, 0.55, 0.32)),
+    (r"^SM_Prop_CubicalWall|^SM_Prop_Divider", dt("Brick_InteriorWall_1.gltf"), (1.5, 1.3, 0.06)),
+    (r"^SM_Prop_Poster_|^SM_Prop_Photo_|^SM_Prop_WallDressing_", vnb("Painting.obj"), (0.75, 0.55, 0.04)),
+    (r"^SM_Prop_NotePad|^SM_Prop_Paper_|^SM_Prop_Papers_", vnb("Notepad.obj"), (0.22, 0.02, 0.28)),
+    (r"^SM_Prop_Note_", vnb("Sticky_Note.obj"), (0.09, 0.005, 0.09)),
+    (r"^SM_Prop_Plate", vnb("Plate.obj"), (0.26, 0.03, 0.26)),
+    (r"^SM_Prop_Ducting_", vnb("Vent.obj"), (0.45, 0.35, 0.45)),
+    (r"^SM_Prop_Server_Cabinet", vnb("Modern_Shelves.obj"), (0.75, 1.85, 0.55)),
+    (r"^SM_Prop_Locker", vnb("Drawer_1.obj"), (0.60, 1.60, 0.50)),
+    (r"^SM_Prop_Computer_Setup_", k("computerScreen.glb"), (0.65, 0.48, 0.22)),
+    (r"^SM_Prop_Box_01|^SM_Prop_Xmas_Present_|^SM_Prop_Pallet_", k("cardboardBoxClosed.glb"), (0.42, 0.35, 0.42)),
+    (r"^SM_Prop_FolderTray_|^SM_Prop_Folder_Holder_|^SM_Prop_PaperTray_", k("books.glb"), (0.28, 0.14, 0.24)),
+    (r"^SM_Prop_Folder_Manila_|^SM_Prop_Folder_PVC_|^SM_Prop_Clipboard_", vnb("Notepad.obj"), (0.24, 0.02, 0.32)),
+    (r"^SM_Prop_Whiteboard_|^SM_Prop_Blackboard_|^SM_Prop_Darkboard_|^SM_Prop_CorkBoard_|^SM_Prop_Presentation_Chart_|^SM_Prop_ProjectorScreen_", vnb("Painting.obj"), (1.40, 0.90, 0.05)),
+    (r"^SM_Prop_Certificate_|^SM_Prop_Child_Art_|^SM_Prop_Employee_Wall_|^SM_Prop_Calender_|^SM_Prop_Sign_", vnb("Painting.obj"), (0.45, 0.35, 0.03)),
+    (r"^SM_Prop_Clock_", vnb("Plate.obj"), (0.35, 0.35, 0.04)),
+    (r"^SM_Prop_Dishes_|^SM_Prop_FruitBowl_|^SM_Prop_Cake_", vnb("Plate.obj"), (0.26, 0.04, 0.26)),
+    (r"^SM_Prop_Cellphone_|^SM_Prop_Calculator_|^SM_Prop_HDD_|^SM_Prop_Modem_|^SM_Prop_Server_Node_", op("mini_pc.glb"), (0.22, 0.05, 0.18)),
+    (r"^SM_Prop_Headphones_|^SM_Prop_Headset_|^SM_Prop_Speaker_Computer_", op("speaker_desktop.glb"), (0.14, 0.18, 0.14)),
+    (r"^SM_Prop_Can_Soda_|^SM_Prop_EnergyDrink_|^SM_Prop_Bottle_|^SM_Prop_Milk_", op("mug.glb"), (0.08, 0.14, 0.08)),
+    (r"^SM_Prop_Snack_", vnb("Simple_Donut.obj"), (0.10, 0.04, 0.10)),
+    (r"^SM_Prop_Rubbish_", k("trashcan.glb"), (0.28, 0.36, 0.28)),
+    (r"^SM_Prop_VendingMachine_|^SM_Prop_ArcadeMachine_|^SM_Prop_Jukebox_|^SM_Prop_WaterCooler_", k("kitchenFridgeSmall.glb"), (0.65, 1.55, 0.55)),
+    (r"^SM_Prop_LampPost_|^SM_Prop_Fan_Pedistal_", k("lampRoundFloor.glb"), (0.38, 1.60, 0.38)),
+    (r"^SM_Prop_Small_Hedge_", k("plantSmall2.glb"), (0.85, 0.65, 0.85)),
+    (r"^SM_Prop_PoolTable_|^SM_Prop_TableFootball_|^SM_Prop_TableTennis_", k("table.glb"), (1.80, 0.75, 1.00)),
+    (r"^SM_Prop_Desk_Treadmill_", k("rugRectangle.glb"), (1.20, 0.06, 0.60)),
+    # Downtown City MegaKit exterior street & buildings
+    (r"^SM_City_Street$", dt("Street_2Lane.gltf"), (10.0, 0.22, 10.0)),
+    (r"^SM_City_Street_NoSidewalk$", dt("Street_2Lane_noSidewalk.gltf"), (10.0, 0.22, 10.0)),
+    (r"^SM_City_Street_Intersection$", dt("Street_4WayIntersection.gltf"), (10.0, 0.22, 10.0)),
+    (r"^SM_City_Sidewalk$", dt("Sidewalk_Straight_3m.gltf"), (5.0, 0.22, 3.0)),
+    (r"^SM_City_Sidewalk_Planter$", dt("Sidewalk_Planter.gltf"), (3.0, 0.32, 3.0)),
+    (r"^SM_City_Bollard$", dt("Prop_Bollard.gltf"), (0.22, 0.85, 0.22)),
+    (r"^SM_City_Building_Large$", dt("Building_Large_2.gltf"), (12.0, 18.0, 10.0)),
+    (r"^SM_City_Building_Medium$", dt("Building_Medium_2_001.gltf"), (9.0, 13.0, 8.0)),
+    (r"^SM_City_Building_Small$", dt("Building_Small_1.gltf"), (7.0, 9.0, 7.0)),
+    (r"^SM_Bld_GardenEdge_01$", dt("Sidewalk_Planter.gltf"), (2.5, 0.28, 0.65, 0.0)),
+    (r"^SM_Bld_GardenEdge_Corner_01$", dt("Prop_Planter_Single.gltf"), (0.85, 0.55, 0.85, 0.0)),
     # Downtown City MegaKit structural pieces (4-tuple = corner-aligned: w, h, d, y)
     (r"^SM_Bld_Wall_Brick_Window_", dt("Brick_Window_Trim.gltf"), (2.5, 3.0, 0.14, 0.0)),
     (r"^SM_Bld_Wall_.*_Window_", dt("Brick_Inset_Window.gltf"), (2.5, 3.0, 0.14, 0.0)),
@@ -140,7 +179,7 @@ def fit_fallback(name):
         return sit(0.45, 1.8 if re.search(r"Tree|LampPost", n) else 0.7, 0.45)
     if "Keyboard" in n: return sit(0.4, 0.03, 0.14)
     if "Mouse_" in n: return sit(0.08, 0.03, 0.12)
-    if re.search(r"PoolTable|TableFootball|TableTennis", n): return sit(1.8, 0.75, 1.0)
+    if re.search(r"PoolTable_0|TableFootball_0|TableTennis_0", n): return sit(1.8, 0.75, 1.0)
     if "CubicalWall" in n: return sit(1.5, 1.3, 0.05)
     if re.search(r"Shelf|Cabinet|Counter", n): return sit(1.0, 1.1, 0.4)
     if "Rug_" in n: return sit(1.6, 0.02, 1.1)
@@ -195,7 +234,11 @@ def import_and_join(src_path):
             bpy.data.objects.remove(o, do_unlink=True)
         return None
 
-    # Apply transforms on each mesh and join into one
+    # Unparent first keeping world transform, then apply transforms and join
+    for m in meshes:
+        mw = m.matrix_world.copy()
+        m.parent = None
+        m.matrix_world = mw
     bpy.ops.object.select_all(action='DESELECT')
     for m in meshes:
         m.select_set(True)
@@ -244,8 +287,8 @@ def normalize_mesh_to_sit(obj, target_w, target_h, target_d):
         x0, x1, y0, y1, z0, z1 = _vert_bounds(obj)
         w, d, h = x1 - x0, y1 - y0, z1 - z0
 
-    s = min(target_w / w, target_h / h, target_d / d)
-    obj.scale = (s, s, s)
+    # Fit to target bounding box so furniture heights & footprints stay consistent across packs
+    obj.scale = (target_w / w, target_d / d, target_h / h)
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
 
     x0, x1, y0, y1, z0, z1 = _vert_bounds(obj)
@@ -300,6 +343,12 @@ def get_mat(rgba):
     return m
 
 def make_fallback_box(name):
+    # Only structural building pieces (SM_Bld_*) get geometric fallback blocks;
+    # unmatched small clutter/props become empty nodes so no random boxes appear.
+    if not name.startswith("SM_Bld_"):
+        obj = bpy.data.objects.new(name, None)
+        bpy.context.collection.objects.link(obj)
+        return obj
     mode, w, h, d, y = fit_fallback(name)
     bpy.ops.mesh.primitive_cube_add(size=1.0)
     obj = bpy.context.active_object

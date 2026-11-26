@@ -256,6 +256,30 @@ function Outside() {
       <pointLight position={[-15, 2.75, 16.3]} intensity={8} distance={7} decay={2} color="#ffd9a8" />
       {[-21.5, 21.5].map((x) => [-0.5, 3].map((z) => <Prop key={`${x}${z}`} name="Small_Hedge_01" position={[x, 0, z]} rot={Math.PI / 2} />))}
       <Prop name="Outdoor_Seat_01" position={[-2, 0, FLOOR.maxZ + 4.4]} rot={Math.PI} />
+      <Prop name="Outdoor_Seat_01" position={[8, 0, FLOOR.maxZ + 4.4]} rot={Math.PI} />
+      {[-12, -4, 4, 12].map((x) => <Prop key={`pl${x}`} name="SM_City_Sidewalk_Planter" position={[x, 0, FLOOR.maxZ + 5.0]} />)}
+      {[-19, -15, 15, 19].map((x) => <Prop key={`bl${x}`} name="SM_City_Bollard" position={[x, 0, FLOOR.maxZ + 4.8]} />)}
+      {/* City street & surrounding buildings on all 4 sides (Downtown City MegaKit) */}
+      {[-20, -10, 0, 10, 20].map((x) => <Prop key={`stf${x}`} name="SM_City_Street" position={[x, -0.02, FLOOR.maxZ + 11.5]} />)}
+      {[-20, -10, 0, 10, 20].map((x) => <Prop key={`stb${x}`} name="SM_City_Street" position={[x, -0.02, FLOOR.minZ - 11.5]} rot={Math.PI} />)}
+      {[-15, -5, 5, 15].map((z) => <Prop key={`stl${z}`} name="SM_City_Street" position={[FLOOR.minX - 10.5, -0.02, z]} rot={Math.PI / 2} />)}
+      {[-15, -5, 5, 15].map((z) => <Prop key={`str${z}`} name="SM_City_Street" position={[FLOOR.maxX + 10.5, -0.02, z]} rot={-Math.PI / 2} />)}
+      <Prop name="SM_City_Street_Intersection" position={[FLOOR.minX - 10.5, -0.02, FLOOR.maxZ + 11.5]} />
+      <Prop name="SM_City_Street_Intersection" position={[FLOOR.maxX + 10.5, -0.02, FLOOR.maxZ + 11.5]} />
+      <Prop name="SM_City_Street_Intersection" position={[FLOOR.minX - 10.5, -0.02, FLOOR.minZ - 11.5]} />
+      <Prop name="SM_City_Street_Intersection" position={[FLOOR.maxX + 10.5, -0.02, FLOOR.minZ - 11.5]} />
+      {/* Front & back city blocks */}
+      <Prop name="SM_City_Building_Large" position={[-18, 0, FLOOR.maxZ + 23]} rot={Math.PI} />
+      <Prop name="SM_City_Building_Medium" position={[-2, 0, FLOOR.maxZ + 22]} rot={Math.PI} />
+      <Prop name="SM_City_Building_Small" position={[13, 0, FLOOR.maxZ + 21]} rot={Math.PI} />
+      <Prop name="SM_City_Building_Medium" position={[-16, 0, FLOOR.minZ - 22]} />
+      <Prop name="SM_City_Building_Large" position={[2, 0, FLOOR.minZ - 23]} />
+      <Prop name="SM_City_Building_Small" position={[17, 0, FLOOR.minZ - 21]} />
+      {/* Left & right city blocks */}
+      <Prop name="SM_City_Building_Medium" position={[-34, 0, 8]} rot={Math.PI / 2} />
+      <Prop name="SM_City_Building_Small" position={[-34, 0, -8]} rot={Math.PI / 2} />
+      <Prop name="SM_City_Building_Large" position={[34, 0, 6]} rot={-Math.PI / 2} />
+      <Prop name="SM_City_Building_Medium" position={[34, 0, -10]} rot={-Math.PI / 2} />
     </group>
   );
 }
@@ -351,8 +375,8 @@ function MeetingScreen() {
   return (
     <group position={[MEETING_SCREEN.x, MEETING_SCREEN.y, MEETING_SCREEN.z]}>
       <group scale={1.75}><Prop name="TV_Wall_01" /></group>
-      <mesh position={[0, 0.0, 0.4]}>
-        <planeGeometry args={[2.5, 1.46]} />
+      <mesh position={[0, 0.0, 0.12]}>
+        <planeGeometry args={[2.25, 1.3]} />
         <meshBasicMaterial map={tex} toneMapped={false} />
       </mesh>
     </group>

@@ -210,6 +210,8 @@ def build_animations():
             "Consume": "drinking",
             "Idle_Rail_Call": "waving",
             "Yes": "clapping",
+            "Idle_TalkingPhone_Loop": "phone_talk",
+            "Idle_FoldArms_Loop": "fold_arms",
         }
         for act in list(bpy.data.actions):
             if act in before_acts:

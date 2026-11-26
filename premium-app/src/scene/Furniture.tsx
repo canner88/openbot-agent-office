@@ -93,11 +93,11 @@ export function Workstation({ id, x, z, rot = 0 }: { id: AgentId; x: number; z: 
       {/* The person sits on the +z side and faces -z; the monitor's screen faces +z, toward them and the camera. */}
       <group position={[0.15, DESK_TOP, -0.2]} onClick={click} onPointerOver={() => { hover(true)(); setHot(true); }} onPointerOut={() => { hover(false)(); setHot(false); }}>
         <Prop name="Computer_Monitor_02" />
-        <group position={[0, 0.355, 0.075]}>
-          <MonitorScreen id={id} w={0.64} h={0.36} />
+        <group position={[0, 0.30, 0.095]}>
+          <MonitorScreen id={id} w={0.58} h={0.33} />
           {hot && (
             <mesh position={[0, 0, -0.005]}>
-              <planeGeometry args={[0.7, 0.42]} />
+              <planeGeometry args={[0.64, 0.39]} />
               <meshBasicMaterial color={color} toneMapped={false} />
             </mesh>
           )}
@@ -149,6 +149,9 @@ export function StaffDesk({ x, z, seed, empty }: { x: number; z: number; seed: n
       <Cubicle x={0} z={0} seed={seed} />
       <Prop name="Desk_04" scale={[0.93, 1, 1]} />
       <Prop name={monitors[seed % monitors.length]} position={[0.1, DESK_TOP, -0.22]} screen={screens[seed % screens.length]} />
+      <group position={[0.1, DESK_TOP + 0.30, -0.22 + 0.095]}>
+        <MonitorScreen id={(['developer', 'designer', 'research', 'qa', 'manager'] as const)[seed % 5]} w={0.56} h={0.32} />
+      </group>
       <Prop name={seed % 2 ? 'Computer_Keyboard_02' : 'Computer_Keyboard_01'} position={[0.1, DESK_TOP, 0.18]} />
       <Prop name={['Computer_Mousepad_01', 'Computer_Mousepad_02'][seed % 2]} position={[0.6, DESK_TOP, 0.18]} />
       <Prop name={['Computer_Mouse_01', 'Computer_Mouse_02', 'Computer_Mouse_03'][seed % 3]} position={[0.6, DESK_TOP + 0.01, 0.18]} />

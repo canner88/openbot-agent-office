@@ -21,10 +21,11 @@ function loadClips() {
   return clipsPromise;
 }
 
-type ClipRole = 'type' | 'sit' | 'sitTalk' | 'walk' | 'run' | 'idle' | 'talk' | 'wave' | 'drink' | 'clap' | 'jump';
+type ClipRole = 'type' | 'sit' | 'sitTalk' | 'walk' | 'run' | 'idle' | 'talk' | 'wave' | 'drink' | 'clap' | 'jump' | 'phoneTalk' | 'foldArms';
 const CLIP_NAMES: Record<ClipRole, string[]> = {
   type: ['typing'], sit: ['sitting_idle', 'sitting'], sitTalk: ['sitting_talking'], walk: ['walking', 'walk'], run: ['running', 'run'],
   idle: ['breathing_idle', 'idle', 'standing_idle'], talk: ['talking'], wave: ['waving', 'wave'], drink: ['drinking'], clap: ['clapping', 'clap'], jump: ['jumping', 'jump'],
+  phoneTalk: ['phone_talk'], foldArms: ['fold_arms'],
 };
 function pickClips(clips: THREE.AnimationClip[]) {
   const out: Partial<Record<ClipRole, THREE.AnimationClip>> = {};
@@ -166,6 +167,7 @@ export function SyntyAvatar({ model, pose, visible = true, palette = '01', wear 
   useFrame((_, dtRaw) => {
     const dt = Math.min(dtRaw, 0.05);
     const p = pose.current;
+    phase.current += dt;
     if (anim) {
       // Mixamo clips: pick one for the pose and cross-fade.
       const a = anim.actions;
@@ -175,7 +177,8 @@ export function SyntyAvatar({ model, pose, visible = true, palette = '01', wear 
         : p.mode === 'run' ? (a.run ? 'run' : 'walk')
         : p.mode === 'air' ? (a.jump ? 'jump' : 'idle')
         : p.gesture && a[p.gesture] ? p.gesture
-        : p.talking && a.talk ? 'talk' : 'idle';
+        : p.talking ? (a.phoneTalk && phase.current % 9 < 3 ? 'phoneTalk' : a.talk ? 'talk' : 'idle')
+        : (a.foldArms && phase.current % 12 < 3 ? 'foldArms' : 'idle');
       const next = a[role] ?? a.idle!;
       if (next !== anim.current) {
         anim.current?.fadeOut(0.3);
