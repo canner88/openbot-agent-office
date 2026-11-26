@@ -286,8 +286,37 @@ const APPS: Record<AgentId, (ctx: CanvasRenderingContext2D, w: number, h: number
   developer, designer, research, qa, manager,
 };
 
+function errorScreen(ctx: CanvasRenderingContext2D, w: number, h: number, s: ScreenState) {
+  chrome(ctx, w, `${s.agent.name} — ERROR`, '#ef4444');
+  ctx.fillStyle = '#180c10';
+  ctx.fillRect(0, 36, w, h - 36);
+  const pulse = 0.65 + 0.35 * Math.sin(s.t * 5);
+  ctx.fillStyle = `rgba(239, 68, 68, ${pulse * 0.22})`;
+  roundRect(ctx, 18, 52, w - 36, 78, 8);
+  ctx.fill();
+  ctx.strokeStyle = '#ef4444';
+  ctx.lineWidth = 2;
+  roundRect(ctx, 18, 52, w - 36, 78, 8);
+  ctx.stroke();
+  ctx.fillStyle = '#fca5a5';
+  ctx.font = `700 18px ${FONT}`;
+  ctx.fillText('⚠ TASK BLOCKED / ERROR', 34, 82);
+  ctx.fillStyle = '#fecaca';
+  ctx.font = `500 14px ${MONO}`;
+  ctx.fillText(fitText(ctx, s.task ? s.task.title : 'Unexpected failure in execution', w - 68), 34, 110);
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = `500 13px ${MONO}`;
+  const lines = [
+    `> agent: ${s.agent.id}`,
+    `> status: error (awaiting recovery)`,
+    `> check agent log or retry task`,
+  ];
+  lines.forEach((l, i) => ctx.fillText(l, 22, 162 + i * 24));
+}
+
 export function drawScreen(ctx: CanvasRenderingContext2D, w: number, h: number, s: ScreenState) {
   ctx.clearRect(0, 0, w, h);
+  if (s.agent.status === 'error') return errorScreen(ctx, w, h, s);
   if (s.agent.place !== 'desk' || s.agent.status === 'paused') return locked(ctx, w, h, s);
   (APPS[s.agent.id] ?? developer)(ctx, w, h, s);
 }

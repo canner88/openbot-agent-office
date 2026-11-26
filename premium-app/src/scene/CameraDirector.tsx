@@ -32,6 +32,8 @@ export function CameraDirector() {
   const { camera } = useThree();
   const controls = useRef<OrbitControlsImpl | null>(null);
   const flight = useRef<{ pos: THREE.Vector3; look: THREE.Vector3 } | null>(null);
+  const follow = useRef(false);
+  const lastFollowPos = useRef(new THREE.Vector3());
   const curLook = useRef(PRESETS.overview.look.clone());
   const lifeBlend = useRef(0);
   const shotId = useOffice((s) => s.shot);
@@ -43,21 +45,26 @@ export function CameraDirector() {
 
   useEffect(() => {
     lifeBlend.current = 0;
+    follow.current = false;
     if (mode === 'overview') flight.current = PRESETS[preset];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
   useEffect(() => {
+    follow.current = false;
     if (mode === 'overview') flight.current = PRESETS[preset];
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nonce]);
 
   useEffect(() => {
-    if (!lookNonce || mode !== 'overview' || !selectedId) return;
+    if (!selectedId) { follow.current = false; return; }
+    if (!lookNonce || mode !== 'overview') return;
     const seat = deskSeat(selectedId);
     const body = agentBodies[selectedId];
     const x = body && body.x < 1e3 ? body.x : seat.x;
     const z = body && body.x < 1e3 ? body.z : seat.z;
+    lastFollowPos.current.set(x, 1.5, z);
+    follow.current = true;
     flight.current = { pos: V(x + 4.8, 8.2, z + 6.2), look: V(x, 1.5, z) };
   }, [lookNonce, mode, selectedId]);
 
@@ -110,6 +117,22 @@ export function CameraDirector() {
       c.target.lerp(flight.current.look, k);
       c.update();
       if (camera.position.distanceTo(flight.current.pos) < 0.05 && c.target.distanceTo(flight.current.look) < 0.05) flight.current = null;
+    } else if (follow.current && selectedId && c) {
+      const body = agentBodies[selectedId];
+      if (body && body.x < 1e3) {
+        const dx = body.x - lastFollowPos.current.x;
+        const dz = body.z - lastFollowPos.current.z;
+        if (Math.hypot(dx, dz) > 0.001) {
+          const k = 1 - Math.exp(-dt * 6);
+          c.target.x += dx * k;
+          c.target.z += dz * k;
+          camera.position.x += dx * k;
+          camera.position.z += dz * k;
+          lastFollowPos.current.x += dx * k;
+          lastFollowPos.current.z += dz * k;
+          c.update();
+        }
+      }
     }
     if (c) curLook.current.copy(c.target);
   });
@@ -125,7 +148,7 @@ export function CameraDirector() {
       maxPolarAngle={1.42}
       minDistance={3}
       maxDistance={80}
-      onStart={() => { flight.current = null; }}
+      onStart={() => { flight.current = null; follow.current = false; }}
     />
   );
 }

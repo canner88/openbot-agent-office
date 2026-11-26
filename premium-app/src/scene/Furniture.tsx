@@ -82,10 +82,11 @@ export function Cubicle({ x, z, seed = 1 }: { x: number; z: number; seed?: numbe
 
 export function Workstation({ id, x, z, rot = 0 }: { id: AgentId; x: number; z: number; rot?: number }) {
   const select = useOffice((s) => s.select);
+  const isError = useOffice((s) => s.agents[id]?.status === 'error');
   const [hot, setHot] = useState(false);
   const click = (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); select(id, 'tasks'); };
   const isManager = id === 'manager';
-  const color = PROFILES[id]?.color ?? '#3b82f6';
+  const color = isError ? '#ef4444' : (PROFILES[id]?.color ?? '#3b82f6');
   return (
     <group position={[x, 0, z]} rotation-y={rot}>
       {!isManager && <Cubicle x={0} z={0} seed={id.length * 3 + x} />}
@@ -95,7 +96,7 @@ export function Workstation({ id, x, z, rot = 0 }: { id: AgentId; x: number; z: 
         <Prop name="Computer_Monitor_02" />
         <group position={[0, 0.30, 0.095]}>
           <MonitorScreen id={id} w={0.58} h={0.33} />
-          {hot && (
+          {(hot || isError) && (
             <mesh position={[0, 0, -0.005]}>
               <planeGeometry args={[0.64, 0.39]} />
               <meshBasicMaterial color={color} toneMapped={false} />

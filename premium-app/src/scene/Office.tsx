@@ -232,6 +232,72 @@ function Pines() {
 }
 
 const LAMPS = [-13, -5, 3, 11];
+const CARS = [
+  { color: '#2563eb', axis: 'x' as const, lane: FLOOR.maxZ + 10.2, min: -28, max: 32, speed: 4.5, offset: 0 },
+  { color: '#eab308', axis: 'x' as const, lane: FLOOR.maxZ + 12.8, min: -28, max: 32, speed: -5.2, offset: 22 },
+  { color: '#dc2626', axis: 'z' as const, lane: FLOOR.maxX + 9.2, min: -24, max: 24, speed: 4.0, offset: 10 },
+];
+
+function StreetTraffic() {
+  const refs = useRef<(THREE.Group | null)[]>([]);
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    CARS.forEach((c, i) => {
+      const g = refs.current[i];
+      if (!g) return;
+      const span = c.max - c.min;
+      const raw = ((t * Math.abs(c.speed) + c.offset) % span);
+      const pos = c.speed > 0 ? c.min + raw : c.max - raw;
+      if (c.axis === 'x') {
+        g.position.set(pos, 0, c.lane);
+        g.rotation.y = c.speed > 0 ? Math.PI / 2 : -Math.PI / 2;
+      } else {
+        g.position.set(c.lane, 0, pos);
+        g.rotation.y = c.speed > 0 ? 0 : Math.PI;
+      }
+    });
+  });
+  return (
+    <group>
+      {CARS.map((c, i) => (
+        <group key={i} ref={(el) => { refs.current[i] = el; }}>
+          {/* chassis */}
+          <mesh position={[0, 0.42, 0]} castShadow>
+            <boxGeometry args={[1.7, 0.5, 3.6]} />
+            <meshStandardMaterial color={c.color} roughness={0.35} metalness={0.4} />
+          </mesh>
+          {/* cabin */}
+          <mesh position={[0, 0.88, -0.15]} castShadow>
+            <boxGeometry args={[1.45, 0.44, 1.9]} />
+            <meshStandardMaterial color="#1e293b" roughness={0.2} metalness={0.5} />
+          </mesh>
+          {/* headlights */}
+          {[-0.55, 0.55].map((x) => (
+            <mesh key={`h${x}`} position={[x, 0.42, 1.81]}>
+              <boxGeometry args={[0.3, 0.14, 0.04]} />
+              <meshBasicMaterial color={[6, 5.5, 3.8]} toneMapped={false} />
+            </mesh>
+          ))}
+          {/* taillights */}
+          {[-0.55, 0.55].map((x) => (
+            <mesh key={`t${x}`} position={[x, 0.42, -1.81]}>
+              <boxGeometry args={[0.3, 0.14, 0.04]} />
+              <meshBasicMaterial color={[5, 0.4, 0.4]} toneMapped={false} />
+            </mesh>
+          ))}
+          {/* wheels */}
+          {[[-0.82, 1.05], [0.82, 1.05], [-0.82, -1.05], [0.82, -1.05]].map(([wx, wz], wi) => (
+            <mesh key={wi} position={[wx, 0.24, wz]} rotation={[0, 0, Math.PI / 2]}>
+              <cylinderGeometry args={[0.24, 0.24, 0.18, 12]} />
+              <meshStandardMaterial color="#111827" roughness={0.8} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+    </group>
+  );
+}
+
 function Outside() {
   const walk = useMemo(() => Array.from({ length: 18 }, (_, i) => FLOOR.minX - 2.5 + i * PIECE), []);
   return (
@@ -264,6 +330,20 @@ function Outside() {
       {[-20, -10, 0, 10, 20].map((x) => <Prop key={`stb${x}`} name="SM_City_Street" position={[x, -0.02, FLOOR.minZ - 11.5]} rot={Math.PI} />)}
       {[-15, -5, 5, 15].map((z) => <Prop key={`stl${z}`} name="SM_City_Street" position={[FLOOR.minX - 10.5, -0.02, z]} rot={Math.PI / 2} />)}
       {[-15, -5, 5, 15].map((z) => <Prop key={`str${z}`} name="SM_City_Street" position={[FLOOR.maxX + 10.5, -0.02, z]} rot={-Math.PI / 2} />)}
+      <Prop name="SM_City_Crosswalk" position={[-15, 0.0, FLOOR.maxZ + 11.5]} rot={Math.PI / 2} />
+      <Prop name="SM_City_Crosswalk" position={[15, 0.0, FLOOR.maxZ + 11.5]} rot={Math.PI / 2} />
+      <Prop name="SM_City_Manhole" position={[-6, 0.0, FLOOR.maxZ + 11.5]} />
+      <Prop name="SM_City_Manhole" position={[6, 0.0, FLOOR.minZ - 11.5]} />
+      {[-12, 4].map((x) => (
+        <group key={`blmp${x}`} position={[x, 0, FLOOR.minZ - 6.2]}>
+          <Prop name="LampPost_01" />
+          <mesh position={[0, 3.32, 0.55]}>
+            <sphereGeometry args={[0.12, 10, 8]} />
+            <meshBasicMaterial color={[6, 4.2, 2.2]} toneMapped={false} />
+          </mesh>
+        </group>
+      ))}
+      <StreetTraffic />
       <Prop name="SM_City_Street_Intersection" position={[FLOOR.minX - 10.5, -0.02, FLOOR.maxZ + 11.5]} />
       <Prop name="SM_City_Street_Intersection" position={[FLOOR.maxX + 10.5, -0.02, FLOOR.maxZ + 11.5]} />
       <Prop name="SM_City_Street_Intersection" position={[FLOOR.minX - 10.5, -0.02, FLOOR.minZ - 11.5]} />
@@ -344,8 +424,13 @@ function Whiteboard() {
 
 function MeetingScreen() {
   const project = useOffice(selectProject);
+  const tasks = useOffice((s) => s.tasks);
   const inMeeting = useOffice((s) => AGENT_IDS.filter((id) => s.agents[id]?.place === 'meeting' && s.agents[id]?.arrived).length);
   const last = useOffice((s) => [...s.messages].reverse().find((m) => m.inMeeting));
+  const list = project ? project.taskIds.map((i) => tasks[i]).filter(Boolean) : [];
+  const done = list.filter((t) => t.status === 'completed').length;
+  const running = list.filter((t) => t.status === 'running');
+  const pct = Math.round(project?.progress ?? 0);
   const tex = useCanvasTexture(1024, 600, (ctx, w, h) => {
     const g = ctx.createLinearGradient(0, 0, w, h);
     g.addColorStop(0, '#0b1222');
@@ -354,24 +439,45 @@ function MeetingScreen() {
     ctx.fillRect(0, 0, w, h);
     ctx.fillStyle = '#7c9cff';
     ctx.font = `700 30px ${MONO}`;
-    ctx.fillText(inMeeting ? `● KICKOFF · ${inMeeting} in the room` : 'MEETING ROOM', 48, 70);
+    ctx.fillText(inMeeting ? `● KICKOFF · ${inMeeting} in the room` : 'MEETING ROOM · LIVE STATUS', 48, 66);
     ctx.fillStyle = '#e9edf5';
-    ctx.font = `800 52px ${FONT}`;
-    ctx.fillText(fitText(ctx, project ? project.title : 'Free', w - 96), 48, 150);
+    ctx.font = `800 46px ${FONT}`;
+    ctx.fillText(fitText(ctx, project ? project.title : 'Ready for next brief', w - 96), 48, 132);
+    // Progress bar
+    roundRect(ctx, 48, 162, w - 96, 20, 10);
+    ctx.fillStyle = '#1e293b';
+    ctx.fill();
+    roundRect(ctx, 48, 162, Math.max(20, ((w - 96) * pct) / 100), 20, 10);
+    ctx.fillStyle = pct >= 100 ? '#22c55e' : '#3b82f6';
+    ctx.fill();
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = `600 22px ${MONO}`;
+    ctx.fillText(`Progress: ${pct}%  (${done}/${list.length} tasks)`, 48, 214);
     if (last && last.from !== 'user' && last.from !== 'system') {
       ctx.fillStyle = PROFILES[last.from].color;
-      ctx.font = `700 30px ${FONT}`;
-      ctx.fillText(PROFILES[last.from].name, 48, 250);
+      ctx.font = `700 28px ${FONT}`;
+      ctx.fillText(PROFILES[last.from].name, 48, 274);
       ctx.fillStyle = '#c9d1e3';
-      ctx.font = `500 30px ${FONT}`;
-      let line = '', y = 300;
+      ctx.font = `500 28px ${FONT}`;
+      let line = '', y = 320;
       for (const word of last.text.split(' ')) {
-        if (ctx.measureText(line + word).width > w - 96) { ctx.fillText(line, 48, y); line = ''; y += 42; if (y > h - 40) break; }
+        if (ctx.measureText(line + word).width > w - 96) { ctx.fillText(line, 48, y); line = ''; y += 38; if (y > h - 40) break; }
         line += word + ' ';
       }
       if (y <= h - 40) ctx.fillText(line, 48, y);
+    } else if (running.length) {
+      running.slice(0, 3).forEach((t, i) => {
+        const y = 280 + i * 56;
+        ctx.fillStyle = PROFILES[t.assignee].color;
+        ctx.beginPath();
+        ctx.arc(60, y - 8, 9, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = `600 24px ${FONT}`;
+        ctx.fillText(fitText(ctx, `${PROFILES[t.assignee].name}: ${t.title}`, w - 160), 82, y);
+      });
     }
-  }, [project?.title, inMeeting, last?.id]);
+  }, [project?.title, pct, done, list.length, inMeeting, last?.id, running.map((t) => t.id).join()]);
   return (
     <group position={[MEETING_SCREEN.x, MEETING_SCREEN.y, MEETING_SCREEN.z]}>
       <group scale={1.75}><Prop name="TV_Wall_01" /></group>

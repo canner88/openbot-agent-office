@@ -121,6 +121,21 @@ const STAFF: Npc[] = [
       { at: { x: -3.0, z: 4.6, rot: 0 }, wait: 4, talking: true },
     ],
   },
+  // outdoor sidewalk pedestrians in front of the office
+  {
+    kind: 'walk', model: 'SK_Chr_Business_Female_02', palette: '03', stops: [
+      { at: { x: -20, z: 18.8, rot: Math.PI / 2 }, wait: 4 },
+      { at: { x: -2, z: 18.8, rot: Math.PI }, wait: 6, talking: true },
+      { at: { x: 16, z: 18.8, rot: -Math.PI / 2 }, wait: 4 },
+    ],
+  },
+  {
+    kind: 'walk', model: 'SK_Chr_Business_Male_03', palette: '01', stops: [
+      { at: { x: 18, z: 19.6, rot: -Math.PI / 2 }, wait: 5 },
+      { at: { x: 8, z: 19.6, rot: 0 }, wait: 6 },
+      { at: { x: -15, z: 19.6, rot: Math.PI / 2 }, wait: 5, gesture: 'wave' },
+    ],
+  },
 ];
 
 const angleLerp = (a: number, b: number, k: number) => {

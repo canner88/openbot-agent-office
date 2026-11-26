@@ -56,7 +56,7 @@ export function OfficeScene() {
   const inside = useOffice((s) => insideLight(s.mode, s.shot));
   return (
     <Canvas
-      shadows={{ type: THREE.PCFSoftShadowMap }}
+      shadows={{ type: THREE.PCFShadowMap }}
       dpr={RENDER ? RENDER.dpr : [1, 1.5]}
       frameloop={RENDER ? 'never' : 'always'}
       style={RENDER ? { position: 'fixed', left: 0, top: 0, width: RENDER.w, height: RENDER.h } : undefined}

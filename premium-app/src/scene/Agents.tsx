@@ -113,7 +113,8 @@ function AgentFigure({ id }: { id: AgentId }) {
     group.current.rotation.y = b.rot;
   });
 
-  const ring = useMemo(() => new THREE.MeshBasicMaterial({ color: agent.color, transparent: true, opacity: 0.85, toneMapped: false }), [agent.color]);
+  const isError = agent.status === 'error';
+  const ring = useMemo(() => new THREE.MeshBasicMaterial({ color: isError ? '#ef4444' : agent.color, transparent: true, opacity: 0.85, toneMapped: false }), [agent.color, isError]);
   const click = (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); select(id); };
 
   return (
@@ -123,9 +124,9 @@ function AgentFigure({ id }: { id: AgentId }) {
       <mesh position={[0, 0.9, 0]} visible={false}>
         <boxGeometry args={[0.7, 1.8, 0.7]} />
       </mesh>
-      {selected && (
+      {(selected || isError) && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]} material={ring}>
-          <ringGeometry args={[0.5, 0.6, 48]} />
+          <ringGeometry args={[0.5, 0.62, 48]} />
         </mesh>
       )}
       <Html portal={labelPortal} position={[0, 2.2, 0]} center distanceFactor={9} zIndexRange={[20, 0]} style={LABEL_STYLE}>
